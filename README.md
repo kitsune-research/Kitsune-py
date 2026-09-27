@@ -1,72 +1,99 @@
-Kitsune: Python 3.11 & NumPy 2.x Modernized Fork
-An open-source, unsupervised online Network Intrusion Detection System (NIDS) based on an Ensemble of Autoencoders (KitNET) and incremental feature extraction (AfterImage).
+# Kitsune NIDS (Python 3 Modernized)
 
-This fork has been refactored, updated, and optimized for modern Python environments (Python 3.11+) and high-performance numerical computing libraries (NumPy 2.x).
+A modern, reproducible, and educational CLI-first implementation of **Kitsune**, an ensemble of autoencoders for online, unsupervised network anomaly detection.
 
-- Key Improvements in this Fork
-NumPy 2.x Compliance: Migrated legacy and deprecated numerical aliases (such as np.Inf / np.nan) to modern standards, ensuring seamless execution without compatibility warnings or runtime failures.
+Based on the original research paper:
 
-Modern Python Support: Fully validated and tested on Python 3.11 with clean virtual environment isolation (.venv).
+> Y. Mirsky, T. Doitshman, Y. Elovici, and A. Shabtai, "Kitsune: An Ensemble of Autoencoders for Online Network Intrusion Detection", NDSS 2018.
 
-Reproducible Setup: Locked dependency chain via requirements.txt.
+## Purpose & Positioning
 
-Robust Anomaly Detection: Verified against real-world benchmark traffic captures (e.g., Mirai botnet pcap), maintaining high-precision RMSE reconstruction peaks during anomalous events.
+This project is not designed to compete with high-throughput production engines like Suricata or Zeek. Instead, it solves a fundamental issue in the original academic release: reproducibility and ease of use.
 
-- Installation & Setup
-Clone the repository:
+* Zero-friction CLI: Analyze network captures with clean commands instead of editing raw scripts.
+* Modern Python: Updated and tested on Python 3.9+ environments with standardized pyproject.toml packaging.
+* Automated Visualizations & Data Export: Instantly outputs detection metrics (.csv) and anomaly curves (.png).
 
-Bash
-git clone https://github.com/paradiselord-dev/Kitsune-py.git
+## Quickstart
+
+### 1. Installation
+
+Clone the repository and install the CLI tool in editable mode:
+
+```bash
+git clone https://github.com/kitsune-research/Kitsune-py.git
 cd Kitsune-py
-Create and activate a virtual environment:
+pip install -e .
+```
 
-On Windows (PowerShell):
+Verify that the CLI is available:
 
-PowerShell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-On Linux / macOS:
+```bash
+kitsune --help
+```
 
-Bash
-python3 -m venv .venv
-source .venv/bin/activate
-Install dependencies:
+### 2. Run the Built-in Demo
 
-Bash
-pip install --upgrade pip
-pip install -r requirements.txt
-📊 Architecture Overview
-Kitsune operates in two primary stages without requiring prior labeling of network packets:
+Run the end-to-end anomaly detection pipeline on sample network traffic:
 
-AfterImage (Feature Extraction): Extracts statistical summaries of network traffic streams in real-time using exponential decaying moving averages across various time windows.
+```bash
+kitsune demo --limit 15000
+```
 
-KitNET (Anomaly Detector): An ensemble of lightweight autoencoders structured in layers:
+This processes the traffic through the AfterImage feature extractor, maps 100 features into localized autoencoders via KitNET, and outputs:
 
-Layer 1 (Mapping Layer): Evaluates individual feature correlations.
+* demo_scores.csv: Packet-by-packet RMSE anomaly scores.
+* demo_plot.png: Anomaly visualization curve.
 
-Layer 2 (Reduction Layer): Compresses the outputs of Layer 1.
+## Detection Output Example
 
-Output Layer: A final autoencoder that computes the aggregate Root Mean Square Error (RMSE). Sudden spikes in RMSE indicate network anomalies or intrusion attempts.
+The plot below illustrates an end-to-end execution on sample Mirai botnet traffic (kitsune demo):
 
-- Quickstart Example
-Run the primary script against a target packet capture (.pcap) file to inspect anomaly scores:
+![Kitsune Anomaly Detection](docs/demo_plot.png)
 
-Python
-from Kitsune import Kitsune
+* Packets 0 – 2,000: Model grace period (Feature Mapping & Autoencoder baseline training).
+* Packets 2,000+: Active detection mode. The spike at packet ~2,500 indicates an anomalous traffic pattern exceeding the learned network baseline.
 
-# Configuration parameters
-packet_path = "mirai.pcap" # Path to target pcap file
-maxAE = 10                  # Maximum size for any autoencoder in the ensemble
-FMgrace = 5000              # Number of instances for feature mapping grace period
-ADgrace = 50000             # Number of instances for anomaly detector grace period
+## Usage
 
-# Initialize Kitsune engine
-Kitsune_instance = Kitsune(packet_path, maxAE, FMgrace, ADgrace)
+### Analyze Custom PCAP / TSV Traces
 
-# Execute processing pipeline
-# rmse_results = Kitsune_instance.procall()
+```bash
+kitsune run path/to/traffic.pcap --limit 50000 --csv scores.csv --plot detection.png
+```
 
-- References & Credits
-Original Paper: Kitsune: An Ensemble of Autoencoders for Online Network Intrusion Detection (Yisroel Mirsky, Tomer Doitshman, Yuval Elovici, Asaf Shabtai — NDSS).
+### Key CLI Parameters
 
-Fork maintained by paradiselord-dev.
+* file (Required)
+  Path to .pcap or .tsv network traffic trace.
+
+* --limit [default: 100000]
+  Maximum number of packets to process.
+
+* --max-ae [default: 10]
+  Maximum size per autoencoder in the KitNET ensemble layer.
+
+* --fm-grace [default: 5000]
+  Feature mapping grace period (clustering and feature assignment phase).
+
+* --ad-grace [default: 50000]
+  Anomaly detector grace period (normal traffic baseline training phase).
+
+* --csv [default: anomaly_scores.csv]
+  Output path to export raw RMSE anomaly scores.
+
+* --plot [default: anomaly_plot.png]
+  Output path to generate the anomaly detection curve graph.
+
+## Architecture Overview
+
+Kitsune operates through a lightweight, multi-stage pipeline:
+
+1. Packet Parsing: Packets are ingested via Scapy or pre-extracted TSV streams.
+2. AfterImage Feature Extraction: Maintains decaying 2D statistics across 5 temporal windows ($100\text{ms}$ to $1\text{min}$) to produce a 100-dimensional vector.
+3. Feature Mapper: Clusters correlated network metrics dynamically.
+4. Ensemble of Autoencoders (KitNET): Trains localized sub-autoencoders on benign baseline traffic and routes reconstructive error through an output autoencoder to produce the final RMSE score.
+
+## License
+
+This modernized project is released under the MIT License (see LICENSE).
