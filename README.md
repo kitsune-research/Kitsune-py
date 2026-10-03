@@ -1,4 +1,5 @@
 # Kitsune NIDS (Python 3 Modernized)
+[![Kitsune CI Pipeline](https://github.com/kitsune-research/Kitsune-py/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/kitsune-research/Kitsune-py/actions/workflows/ci.yml)
 
 A modern, reproducible, and educational CLI-first implementation of **Kitsune**, an ensemble of autoencoders for online, unsupervised network anomaly detection.
 
