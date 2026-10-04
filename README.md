@@ -193,3 +193,7 @@ Actions CI pipeline across:
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Documentation & Field Guides
+* 🇪🇸 [Manual Práctico para Principiantes (Docs ES)](docs/manual_es.md)
+* 🇬🇧 [Practical Engineering Field Guide (Docs EN)](docs/manual_en.md)
