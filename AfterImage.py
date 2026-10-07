@@ -250,31 +250,81 @@ class incStat_cov:
 
 class incStatDB:
     # default_lambda: use this as the lambda for all streams. If not specified, then you must supply a Lambda with every query.
-    def __init__(self,limit=np.inf,default_lambda=np.nan):
+    def __init__(
+        self,
+        limit=np.inf,
+        default_lambda=np.nan,
+        prune_interval=10000,
+        w_eps=1e-4,
+    ):
         self.HT = dict()
         self.limit = limit
         self.df_lambda = default_lambda
-
+        self.prune_interval = prune_interval
+        self.w_eps = w_eps
+        self._pkt_count = 0
+    
     def get_lambda(self,Lambda):
         if not np.isnan(self.df_lambda):
             Lambda = self.df_lambda
         return Lambda
+    
+    def prune_inactive(self, cur_time: float) -> int:
+        """Removes incremental statistics whose decayed weight w_i < w_eps.
+
+        Follows NDSS 2018 Section VI to prevent state-exhaustion DoS attacks.
+        """
+        keys_to_remove = []
+        for key, inc_s in self.HT.items():
+            dt = cur_time - inc_s.lastTimestamp
+            # Evitar desalojar instancias recién registradas en este mismo timestamp
+            if dt <= 0 and inc_s.w == 0:
+                continue
+
+            if dt > 0:
+                decayed_w = inc_s.w * (2.0 ** (-inc_s.Lambda * dt))
+            else:
+                decayed_w = inc_s.w
+
+            if decayed_w < self.w_eps:
+                keys_to_remove.append(key)
+
+        for key in keys_to_remove:
+            inc_s = self.HT.pop(key, None)
+            if inc_s and hasattr(inc_s, "covs"):
+                inc_s.covs.clear()
+
+        return len(keys_to_remove)
 
     # Registers a new stream. init_time: init lastTimestamp of the incStat
-    def register(self,ID,Lambda=1,init_time=0,isTypeDiff=False):
-        #Default Lambda?
+    def register(self, ID, Lambda=1, init_time=0, isTypeDiff=False):
+        # Default Lambda?
         Lambda = self.get_lambda(Lambda)
 
-        #Retrieve incStat
-        key = ID+"_"+str(Lambda)
+        self._pkt_count += 1
+        if (
+            self.prune_interval is not None
+            and self._pkt_count % self.prune_interval == 0
+        ):
+            self.prune_inactive(cur_time=init_time)
+
+        # Retrieve incStat
+        key = ID + "_" + str(Lambda)
         incS = self.HT.get(key)
-        if incS is None: #does not already exist
+        if incS is None:  # Does not already exist
             if len(self.HT) + 1 > self.limit:
-                raise LookupError(
-                    'Adding Entry:\n' + key + '\nwould exceed incStatHT 1D limit of ' + str(
-                        self.limit) + '.\nObservation Rejected.')
+                # Intento de poda de emergencia antes de rechazar
+                pruned = self.prune_inactive(cur_time=init_time)
+                if len(self.HT) + 1 > self.limit:
+                    raise LookupError(
+                        "Adding Entry:\n"
+                        + key
+                        + "\nwould exceed incStatHT 1D limit of "
+                        + str(self.limit)
+                        + ".\nObservation Rejected."
+                    )
             incS = incStat(Lambda, ID, init_time, isTypeDiff)
-            self.HT[key] = incS #add new entry
+            self.HT[key] = incS  # add new entry
         return incS
 
     # Registers covariance tracking for two streams, registers missing streams
