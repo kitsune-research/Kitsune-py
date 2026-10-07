@@ -2,14 +2,16 @@ name: Kitsune CI Pipeline
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [ "main" ]
 
 jobs:
   test:
-    name: Test (Py ${{ matrix.python-version }} on ${{ matrix.os }})
+    name: test (${{ matrix.os }}, py${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10  # Previene bloqueos zombi acotando el runner a 10 min
+
     strategy:
       fail-fast: false
       matrix:
@@ -26,19 +28,18 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
 
-      - name: Install system dependencies (Ubuntu)
+      - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libpcap-dev build-essential
+          sudo apt-get install -y libpcap-dev
 
-      - name: Install Python dependencies
+      - name: Install package and test dependencies
         run: |
-          python -m pip install --upgrade pip setuptools wheel
-          python -m pip install pytest pytest-cov numpy scipy scapy
+          python -m pip install --upgrade pip
+          pip install --no-input -e .
+          pip install --no-input pytest pytest-cov
 
-      - name: Execute Pytest Suite with Coverage
-        env:
-          PYTHONPATH: .
+      - name: Run test suite with pytest
         run: |
-          python -m pytest tests/ -v
+          pytest tests/ -v --cov=.
