@@ -1,116 +1,118 @@
-# Kitsune NIDS: Fundamentos Matemáticos y Arquitectura de Ejecución
+# Kitsune NIDS: Mathematical Foundations and Execution Architecture
 
-Este documento formaliza la arquitectura del sistema de detección de intrusiones en red (NIDS) Kitsune, detallando la extracción de características en tiempo real con **AfterImage**, la descomposición de dimensionalidad con **KitNET** y las cotas de complejidad computacional y contención de memoria en hardware perimetral.
+> 🇪🇸 *[Versión en español disponible en architecture_es.md](architecture_es.md)*
+
+This document formalizes the architecture of the Kitsune Network Intrusion Detection System (NIDS), detailing online streaming feature extraction with **AfterImage**, feature space decomposition via **KitNET**, and asymptotic complexity bounds designed for resource-constrained edge devices without GPU acceleration.
 
 ---
 
-## 1. Complejidad Asintótica: Descomposición en Ensamble KitNET
+## 1. Asymptotic Computational Complexity: Ensemble Decomposition
 
-La detección de anomalías tradicional basada en redes neuronales suele desplegar un autoencoder de tres capas sobre un vector de características $\vec{x} \in \mathbb{R}^n$ con ratio de compresión $\beta \in (0, 1]$ en la capa oculta.
+Traditional deep-learning-based anomaly detectors typically deploy a monolithic three-layer autoencoder over a feature vector $\vec{x} \in \mathbb{R}^n$ with a hidden compression ratio $\beta \in (0, 1]$.
 
-### 1.1. Autoencoder Monolítico: Complejidad Cuadrática
-En una arquitectura densa con capas $l^{(1)}, l^{(2)}, l^{(3)}$ donde $\vert{}l^{(1)}\vert{} = n$, $\vert{}l^{(2)}\vert{} = \lceil \beta n \rceil$ y $\vert{}l^{(3)}\vert{} = n$, la activación de una capa requiere la multiplicación de la matriz de pesos sinápticos por el vector de entrada:
+### 1.1. Monolithic Autoencoder: Quadratic Complexity
+In a fully connected architecture with layers $l^{(1)}, l^{(2)}, l^{(3)}$ where $\vert{}l^{(1)}\vert{} = n$, $\vert{}l^{(2)}\vert{} = \lceil \beta n \rceil$, and $\vert{}l^{(3)}\vert{} = n$, computing the activations involves dense matrix-vector multiplications:
 
-$$\mathcal{O}(\vert{}l^{(1)}\vert{} \cdot \vert{}l^{(2)}\vert{} + \vert{}l^{(2)}\vert{} \cdot \vert{}l^{(3)}\vert{}) = \mathcal{O}(n \cdot \beta n + \beta n \cdot n) = \mathcal{O}(n^2) \quad \text{(Ecuación 12)}$$
+$$\mathcal{O}(\vert{}l^{(1)}\vert{} \cdot \vert{}l^{(2)}\vert{} + \vert{}l^{(2)}\vert{} \cdot \vert{}l^{(3)}\vert{}) = \mathcal{O}(n \cdot \beta n + \beta n \cdot n) = \mathcal{O}(n^2) \quad \text{(Equation 12)}$$
 
-Para el espacio canónico de Kitsune ($n = 115$ características continuas y $\beta = 0.75$), un modelo monolítico demanda aproximadamente $2 \cdot 115 \cdot 87 = 20.010$ operaciones de punto flotante por paquete. En enlaces de alta velocidad con decenas de miles de paquetes por segundo, este coste genera saturación de colas en CPUs embebidas.
+For Kitsune's canonical feature space ($n = 115$ continuous statistics, $\beta = 0.75$), a monolithic network requires approximately $2 \cdot 115 \cdot 87 \approx 20,010$ floating-point operations per packet. On high-throughput edge routers handling tens of thousands of packets per second, this computational burden inevitably causes queue exhaustion and packet dropping.
 
-### 1.2. Partición Jerárquica KitNET: Complejidad $\mathcal{O}(k^2)$
-KitNET desacopla el espacio de características proyectando $\vec{x} \in \mathbb{R}^n$ en un conjunto ordenado de $k$ subinstancias disjuntas:
+### 1.2. KitNET Ensemble Partitioning: $\mathcal{O}(k^2)$ Complexity
+KitNET circumvents this bottleneck by projecting $\vec{x} \in \mathbb{R}^n$ into an ordered set of $k$ disjoint sub-instances:
 
 $$v = \{\vec{v}_1, \vec{v}_2, \dots, \vec{v}_k\}, \quad \sum_{i=1}^k \dim(\vec{v}_i) = n, \quad \dim(\vec{v}_i) \le m$$
 
-donde $m$ es el hiperparámetro de cota superior ($m \le 10$).
+where $m$ is the upper bound parameter ($m \le 10$).
 
-La arquitectura se divide en dos niveles:
-1. **Capa de Ensamble ($L^{(1)}$):** Compuesta por $k$ autoencoders independientes $\{\theta_1, \dots, \theta_k\}$, donde cada autoencoder $\theta_i$ reconstruye su subespacio $\vec{v}_i$. La complejidad de evaluar toda la capa es:
+The architecture is decoupled into two processing stages:
+1. **Ensemble Layer ($L^{(1)}$):** Consists of $k$ independent three-layer autoencoders $\{\theta_1, \dots, \theta_k\}$, where each $\theta_i$ reconstructs its assigned subspace $\vec{v}_i$. The cumulative execution complexity is:
    $$\mathcal{O}\left(\sum_{i=1}^k \dim(\vec{v}_i)^2\right) \le \mathcal{O}(k \cdot m^2)$$
-2. **Capa de Salida ($L^{(2)}$):** Un único autoencoder $\theta_0$ que toma como entrada el vector de errores RMSE de la capa anterior $\vec{z} \in [0, 1]^k$. Su complejidad de ejecución es $\mathcal{O}(k \cdot \lceil \beta k \rceil) = \mathcal{O}(k^2)$.
+2. **Output Layer ($L^{(2)}$):** A single autoencoder $\theta_0$ that takes the 0-1 normalized RMSE reconstruction error signals $\vec{z} \in [0, 1]^k$ as input. Its execution complexity is $\mathcal{O}(k \cdot \lceil \beta k \rceil) = \mathcal{O}(k^2)$.
 
-La complejidad agregada de inferencia y entrenamiento estocástico (SGD con paso unitario) es:
+The overall complexity for forward propagation and single-step Stochastic Gradient Descent (SGD) training is:
 
-$$\mathcal{O}(k \cdot m^2 + k^2) = \mathcal{O}(k^2) \quad \text{(Ecuación 13)}$$
+$$\mathcal{O}(k \cdot m^2 + k^2) = \mathcal{O}(k^2) \quad \text{(Equation 13)}$$
 
-Dado que $m \le 10$ actúa como una constante fija del sistema, la complejidad depende exclusivamente del número de autoencoders $k$:
-* **Caso óptimo ($k = \lceil n/m \rceil$):** Con $n = 115$ y $m = 10$, se generan $k \approx 12$ autoencoders. El número de multiplicaciones se reduce a $\approx 1.920$ en $L^{(1)}$ y $\approx 216$ en $L^{(2)}$, acelerando el procesamiento en casi un orden de magnitud frente al modelo monolítico.
-* **Escalabilidad empírica:** En un único núcleo ARM Cortex-A53 (Raspberry Pi 3B a 1.2 GHz), KitNET incrementa la tasa de procesamiento de $\approx 1.000$ paquetes/s ($k=1$) a $\approx 5.400$ paquetes/s ($k=35$), y alcanza más de $37.000$ paquetes/s en procesadores x86-64.
+Because $m \le 10$ acts as a constant bound:
+* **Optimal Case ($k = \lceil n/m \rceil$):** When $n = 115$ and $m = 10$, $k \approx 12$ autoencoders are instantiated. Multiplications drop to $\approx 1,920$ in $L^{(1)}$ and $\approx 216$ in $L^{(2)}$, speeding up packet processing by nearly an order of magnitude compared to a monolithic model.
+* **Empirical Throughput:** Benchmarks demonstrate that KitNET increases single-core processing rates from $\approx 1,000$ packets/s ($k=1$) to $\approx 5,400$ packets/s ($k=35$) on an ARM Cortex-A53 (Raspberry Pi 3B @ 1.2 GHz), exceeding $37,000$ packets/s on commodity x86-64 CPUs.
 
 ---
 
-## 2. Extracción de Características en Streaming $\mathcal{O}(1)$: AfterImage
+## 2. Real-Time Streaming Feature Extraction: AfterImage
 
-AfterImage mantiene métricas estadísticas del tráfico de red sobre cinco ventanas de decaimiento temporal amortiguadas:
+AfterImage maintains continuous traffic statistics across five damped exponential decay windows:
 
 $$\lambda \in \{5, 3, 1, 0.1, 0.01\}$$
 
-equivalentes a horizontes aproximados de 100 ms, 500 ms, 1.5 s, 10 s y 60 s.
+corresponding to temporal horizons of approximately 100 ms, 500 ms, 1.5 s, 10 s, and 60 s.
 
-### 2.1. Decaimiento Exponencial Continuo
-Para evitar el almacenamiento de historiales de paquetes ($\mathcal{O}(N)$ en memoria), el peso de las observaciones decae continuamente en función del tiempo transcurrido desde el último evento registrado en el canal:
+### 2.1. Continuous Exponential Decay
+To eliminate packet buffering in memory ($\mathcal{O}(N)$), historical observations decay continuously as a function of elapsed time since the previous update on that channel:
 
-$$d_\lambda(t) = 2^{-\lambda t}, \quad t = t_{\text{cur}} - T_{\text{last}} \quad \text{(Ecuación 6)}$$
+$$d_\lambda(t) = 2^{-\lambda t}, \quad t = t_{\text{cur}} - T_{\text{last}} \quad \text{(Equation 6)}$$
 
-### 2.2. Actualización Incremental de Tuplas
-Cada flujo se registra mediante la tupla incremental:
+### 2.2. Incremental Damped Updates ($\mathcal{O}(1)$)
+Each monitored flow maintains an incremental statistic tuple:
 
 $$IS_{i,\lambda} := \left(w, LS, SS, SR_{ij}, T_{\text{last}}\right)$$
 
-Donde $w$ es el peso amortiguado, $LS$ es la suma lineal, $SS$ la suma cuadrática y $SR_{ij}$ la suma de productos residuales cruzados para flujos bivariados. Al recibir una observación $x_{\text{cur}}$ en el tiempo $t_{\text{cur}}$:
+where $w$ is the decayed weight, $LS$ is the linear sum, $SS$ is the squared sum, and $SR_{ij}$ is the sum of residual products across bidirectional streams. When a new packet metric $x_{\text{cur}}$ arrives at $t_{\text{cur}}$:
 
-1. Se computa el factor de amortiguación: $\gamma = 2^{-\lambda (t_{\text{cur}} - T_{\text{last}})}$.
-2. Se actualiza la tupla en tiempo y espacio constante $\mathcal{O}(1)$:
+1. Decay factor computation: $\gamma = 2^{-\lambda (t_{\text{cur}} - T_{\text{last}})}$.
+2. In-place tuple update in constant time and space $\mathcal{O}(1)$:
    $$w \leftarrow \gamma w + 1$$
    $$LS \leftarrow \gamma LS + x_{\text{cur}}$$
    $$SS \leftarrow \gamma SS + x_{\text{cur}}^2$$
    $$SR_{ij} \leftarrow \gamma SR_{ij} + (x_{\text{cur}}^{(i)} - \mu_i)(x_{\text{cur}}^{(j)} - \mu_j)$$
    $$T_{\text{last}} \leftarrow t_{\text{cur}}$$
 
-A partir de esta tupla, las estadísticas univariadas y bivariadas se obtienen directamente:
+Univariate (1D) and bivariate (2D) statistics are computed instantaneously:
 
 $$\mu = \frac{LS}{w}, \quad \sigma = \sqrt{\max\left(0, \frac{SS}{w} - \mu^2\right)}, \quad \text{Cov}_{i,j} = \frac{SR_{ij}}{w_i + w_j}, \quad P_{i,j} = \frac{\text{Cov}_{i,j}}{\sigma_i \sigma_j}$$
 
 ---
 
-## 3. Matriz Correlacional Incremental y Mapeo de Subespacios
+## 3. Incremental Correlation Clustering and Feature Mapping
 
-Durante el período `FM_grace_period`, AfterImage acumula estadísticas entre las características de entrada para construir la matriz de distancia de correlación $D \in \mathbb{R}^{n \times n}$:
+During `FM_grace_period`, the Feature Mapper summarizes cross-feature statistics to construct the correlation distance matrix $D \in \mathbb{R}^{n \times n}$:
 
-$$D_{i,j} = 1 - \frac{C_{i,j}}{\sqrt{c_{rs}^{(i)}} \sqrt{c_{rs}^{(j)}}} \quad \text{(Ecuación 10)}$$
+$$D_{i,j} = 1 - \frac{C_{i,j}}{\sqrt{c_{rs}^{(i)}} \sqrt{c_{rs}^{(j)}}} \quad \text{(Equation 10)}$$
 
-donde $C_{i,j}$ es la covarianza cruzada incremental de residuos y $c_{rs}^{(i)}$ es la suma cuadrática de residuos para la característica $i$.
+where $C_{i,j}$ represents the incremental residual covariance and $c_{rs}^{(i)}$ is the sum of squared residuals for feature $i$.
 
-Al expirar el período de gracia, se ejecuta un agrupamiento jerárquico aglomerativo sobre $D$. Las ramas del dendrograma cuya cardinalidad supera $m$ se dividen de forma recursiva hasta garantizar que ningún subconjunto contenga más de $m$ dimensiones. Este agrupamiento asigna características altamente correlacionadas al mismo autoencoder, permitiendo a cada red en $L^{(1)}$ modelar dependencias no lineales específicas del protocolo.
-
----
-
-## 4. Resiliencia contra Vectores DoS de Agotamiento de Estado (State-Exhaustion)
-
-Un vector de ataque crítico en entornos de borde es el **State-Exhaustion DoS** (NDSS 2018, Sección VI): un atacante inyecta flujos masivos de paquetes con direcciones IP y puertos aleatorios para forzar la instanciación infinita de tablas hash en el extractor de características.
-
-### 4.1. Huella de Memoria Base
-En la implementación de AfterImage, una conexión de red bidireccional monitorizada a través de las cinco ventanas temporales consume aproximadamente 1 KB de RAM. Un límite estricto de 1 MB de RAM es suficiente para mantener activas 1.000 conversaciones de red simultáneas.
-
-### 4.2. Poda Amortizada en $\mathcal{O}(1)$
-Dado que las escalas temporales más rápidas ($\lambda = 5, 3$) decaen a cero en cuestión de milisegundos tras cesar la actividad, AfterImage incorpora un mecanismo pasivo de recolección de memoria:
-
-$$\text{Si } w_i < \epsilon \quad (\epsilon \approx 10^{-5}), \quad \text{se elimina la entrada } IS_{i,\lambda} \text{ de la tabla hash.}$$
-
-Dado que los paquetes de escaneo aleatorio generan entradas transitorias que no reciben tráfico posterior, sus pesos amortiguados colapsan de inmediato, impidiendo el desbordamiento de memoria sin degradar el throughput de captura.
+Once grace expires, agglomerative hierarchical clustering runs on $D$. Dendrogram links exceeding size $m$ are recursively severed until every cluster contains at most $m$ features. This groups correlated protocol behaviors into dedicated micro-autoencoders, isolating anomalous domain signals.
 
 ---
 
-## 5. Umbral Estadístico Log-Normal de Decisión
+## 4. Defense Against State-Exhaustion DoS Attacks
 
-Para operar sin supervisión y garantizar una tasa de falsas alarmas acotada ($FPR \le 0.001$), los residuos RMSE generados por la capa de salida $L^{(2)}$ durante el tráfico benigno (`AD_grace_period`) se ajustan a una distribución log-normal:
+In resource-constrained deployments, attackers may launch **State-Exhaustion DoS** attacks (NDSS 2018, Section VI) by injecting high-frequency packets with randomized IP addresses and ports to exhaust hash table memory.
+
+### 4.1. Memory Bounds
+A bidirectional network conversation monitored across all 5 decay windows consumes $\approx 1$ KB of RAM. A 1 MB memory cap accommodates $\approx 1,000$ concurrent active links.
+
+### 4.2. $\mathcal{O}(1)$ Amortized Pruning
+Because rapid decay scales ($\lambda \ge 1$) drop toward zero within milliseconds of channel inactivity, AfterImage implements passive memory reclamation:
+
+$$\text{If } w_i < \epsilon \quad (\epsilon \approx 10^{-5}), \quad \text{evict } IS_{i,\lambda} \text{ from the hash map.}$$
+
+Transient scanning bursts (such as port scans with spoofed source IPs) decay instantaneously and are purged without incurring table contention or degrading capture throughput.
+
+---
+
+## 5. Log-Normal Threshold Calibration
+
+To operate autonomously with a bounded false positive rate ($FPR \le 0.001$), reconstruction RMSE scores during benign calibration (`AD_grace_period`) are fitted to a log-normal distribution:
 
 $$\ln(s) \sim \mathcal{N}(\mu_{\log}, \sigma_{\log}^2)$$
 
-Los estimadores de máxima verosimilitud sobre $N$ muestras de calibración son:
+Maximum Likelihood Estimation (MLE) over $N$ clean calibration instances yields:
 
 $$\hat{\mu}_{\log} = \frac{1}{N} \sum_{i=1}^N \ln(s_i), \quad \hat{\sigma}_{\log} = \sqrt{\frac{1}{N} \sum_{i=1}^N \left(\ln(s_i) - \hat{\mu}_{\log}\right)^2}$$
 
-El umbral analítico de corte $\tau$ para el percentil $99.9\%$ ($Z_{0.999} \approx 3.0902$) se calcula como:
+The analytical detection cutoff $\tau$ at the $99.9\text{th}$ percentile ($Z_{0.999} \approx 3.0902$) is:
 
 $$\tau = \exp\left(\hat{\mu}_{\log} + 3.0902 \cdot \hat{\sigma}_{\log}\right)$$
 
-Durante la fase de ejecución, cualquier paquete que verifique $RMSE(x) > \tau$ dispara una alerta inmediata de intrusión sin requerir intervención humana ni reentrenamiento supervisado.
+In execution mode, any packet satisfying $RMSE(x) > \tau$ triggers an immediate alert without manual threshold tuning.
