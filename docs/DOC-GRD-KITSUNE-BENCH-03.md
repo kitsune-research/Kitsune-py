@@ -7,16 +7,16 @@
 
 * **Identificador de Especificación:** `DOC-GRD-KITSUNE-BENCH-03`.
 * **Nivel de Clasificación Técnica:** Nivel MECES 3 / European Qualifications Framework Level 7 (Auditoría Forense / Detección Comportamental de Redes).
-* **Entidades y Repositorios:** Upstream institucional `kitsune-research/Kitsune-py` y nodo de portafolio `paradiselord-dev/Kitsune-py`[cite: 1].
-* **Base Experimental:** Y. Mirsky et al., *Kitsune: An Ensemble of Autoencoders for Online Network Intrusion Detection*, NDSS 2018, Sección V (*Evaluation*)[cite: 2].
-* **Pila de Ejecución Local:** Windows 11 Pro, Python 3.11.9, Scapy, NumPy 2.x, CLI unificada (`kitsune eval`, `kitsune run`) y datasets de captura directa[cite: 1].
-* **Propósito:** Formalizar los resultados empíricos, curvas de rendimiento, benchmarks de throughput/latencia en SoCs embebidos y la disección forense de los 9 vectores de ataque catalogados en el paper fundacional[cite: 2].
+* **Entidades y Repositorios:** Upstream institucional `kitsune-research/Kitsune-py` y nodo de portafolio `paradiselord-dev/Kitsune-py`.
+* **Base Experimental:** Y. Mirsky et al., *Kitsune: An Ensemble of Autoencoders for Online Network Intrusion Detection*, NDSS 2018, Sección V (*Evaluation*).
+* **Pila de Ejecución Local:** Windows 11 Pro, Python 3.11.9, Scapy, NumPy 2.x, CLI unificada (`kitsune eval`, `kitsune run`) y datasets de captura directa.
+* **Propósito:** Formalizar los resultados empíricos, curvas de rendimiento, benchmarks de throughput/latencia en SoCs embebidos y la disección forense de los 9 vectores de ataque catalogados en el paper fundacional.
 
 ---
 
 ## 1. Metodología Experimental y Topologías de Red
 
-La evaluación empírica de Kitsune se diseñó para contrastar su tasa de detección no supervisada frente a detectores de firmas comerciales y algoritmos de Machine Learning por lotes (*batch/offline*), operando sobre dos infraestructuras físicas de producción[cite: 2]:
+La evaluación empírica de Kitsune se diseñó para contrastar su tasa de detección no supervisada frente a detectores de firmas comerciales y algoritmos de Machine Learning por lotes (*batch/offline*), operando sobre dos infraestructuras físicas de producción:
 
 ```
                      TOPOLOGÍA 1: RED DE VIDEOVIGILANCIA IP (PoE)
@@ -56,37 +56,37 @@ La evaluación empírica de Kitsune se diseñó para contrastar su tasa de detec
 ```
 
 ### 1.1 Entorno 1: Red de Videovigilancia Comercial (Cámaras IP)
-Diseñada para monitorizar flujos constantes de alta tasa de transferencia multimedia[cite: 2]. Emplea 8 cámaras de videovigilancia Sony profesionales alimentadas mediante PoE, transmitiendo vídeo H.264/MPEG-4 a 720p y 15 fps hacia un servidor DVR a través de un túnel VPN sitio a sitio[cite: 2]:
-* **Modelos SNC-EM602RC / SNC-EM600:** Streaming mediante protocolo RTP sobre UDP (195 a 350 pkts/s sostenidos, 1.4 a 1.8 Mbps)[cite: 2].
-* **Modelos SNC-EB600 / SNC-EB602R:** Streaming encapsulado en HTTPS (TLSv1) y HTTP/TCP (290 a 320 pkts/s, 1.8 Mbps)[cite: 2].
-* **Punto de Captura:** Interfaz troncal del switch central antes del procesado en el DVR[cite: 2].
+Diseñada para monitorizar flujos constantes de alta tasa de transferencia multimedia. Emplea 8 cámaras de videovigilancia Sony profesionales alimentadas mediante PoE, transmitiendo vídeo H.264/MPEG-4 a 720p y 15 fps hacia un servidor DVR a través de un túnel VPN sitio a sitio:
+* **Modelos SNC-EM602RC / SNC-EM600:** Streaming mediante protocolo RTP sobre UDP (195 a 350 pkts/s sostenidos, 1.4 a 1.8 Mbps).
+* **Modelos SNC-EB600 / SNC-EB602R:** Streaming encapsulado en HTTPS (TLSv1) y HTTP/TCP (290 a 320 pkts/s, 1.8 Mbps).
+* **Punto de Captura:** Interfaz troncal del switch central antes del procesado en el DVR.
 
 ### 1.2 Entorno 2: Red Inalámbrica IoT (Vector Botnet)
-Red inalámbrica compuesta por 9 dispositivos de Internet de las Cosas (termostato, monitor de bebés, webcam, dos videoporteros y cuatro cámaras de gama blanca) junto con tres ordenadores de escritorio que generan tráfico de navegación real[cite: 2]. En esta red se introdujo una muestra real de malware de la botnet Mirai para analizar la fase de infección y propagación transversal[cite: 2].
+Red inalámbrica compuesta por 9 dispositivos de Internet de las Cosas (termostato, monitor de bebés, webcam, dos videoporteros y cuatro cámaras de gama blanca) junto con tres ordenadores de escritorio que generan tráfico de navegación real. En esta red se introdujo una muestra real de malware de la botnet Mirai para analizar la fase de infección y propagación transversal.
 
 ---
 
 ## 2. Catálogo Forense de Amenazas (Los 9 Vectores de NDSS 2018)
 
-Se evaluaron 9 escenarios de ataque reales que comprometen la Confidencialidad (C), Integridad (I) y Disponibilidad (A) del canal[cite: 2]. Para cada escenario, los modelos fueron entrenados en el primer millón de paquetes benignos ($1.000.000$) y evaluados en el tráfico remanente de la captura[cite: 2]:
+Se evaluaron 9 escenarios de ataque reales que comprometen la Confidencialidad (C), Integridad (I) y Disponibilidad (A) del canal. Para cada escenario, los modelos fueron entrenados en el primer millón de paquetes benignos ($1.000.000$) y evaluados en el tráfico remanente de la captura:
 
 | Categoría | Vector Hostil | Herramienta / Método | Violación | Paquetes Totales | Duración Train | Duración Exec |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Reconocimiento** | **OS Scan** | Nmap | C | $1.697.851$ | $33.3\text{ min}$ | $18.9\text{ min}$[cite: 2] |
-| **Reconocimiento** | **Fuzzing** | SFuzz | C | $2.244.139$ | $33.3\text{ min}$ | $52.2\text{ min}$[cite: 2] |
-| **Man-in-the-Middle**| **Video Injection** | Video Jack | C, I | $2.472.401$ | $14.2\text{ min}$ | $19.2\text{ min}$[cite: 2] |
-| **Man-in-the-Middle**| **ARP MitM** | Ettercap | C | $2.504.267$ | $8.05\text{ min}$ | $20.1\text{ min}$[cite: 2] |
-| **Man-in-the-Middle**| **Active Wiretap** | Raspberry Pi 3B Bridge | C | $4.554.925$ | $20.8\text{ min}$ | $74.8\text{ min}$[cite: 2] |
-| **Denegación (DoS)** | **SSDP Flood** | Saddam | A | $4.077.266$ | $14.4\text{ min}$ | $26.4\text{ min}$[cite: 2] |
-| **Denegación (DoS)** | **SYN DoS** | Hping3 | A | $2.771.276$ | $18.7\text{ min}$ | $34.1\text{ min}$[cite: 2] |
-| **Denegación (DoS)** | **SSL Renegotiation**| THC-SSL-DOS | A | $6.084.492$ | $10.7\text{ min}$ | $54.9\text{ min}$[cite: 2] |
-| **Botnet Malware** | **Mirai Infection** | Telnet Worm propagation | C, I | $764.137$ | $52.0\text{ min}$ | $66.9\text{ min}$[cite: 2] |
+| **Reconocimiento** | **OS Scan** | Nmap | C | $1.697.851$ | $33.3\text{ min}$ | $18.9\text{ min}$ |
+| **Reconocimiento** | **Fuzzing** | SFuzz | C | $2.244.139$ | $33.3\text{ min}$ | $52.2\text{ min}$ |
+| **Man-in-the-Middle**| **Video Injection** | Video Jack | C, I | $2.472.401$ | $14.2\text{ min}$ | $19.2\text{ min}$ |
+| **Man-in-the-Middle**| **ARP MitM** | Ettercap | C | $2.504.267$ | $8.05\text{ min}$ | $20.1\text{ min}$ |
+| **Man-in-the-Middle**| **Active Wiretap** | Raspberry Pi 3B Bridge | C | $4.554.925$ | $20.8\text{ min}$ | $74.8\text{ min}$ |
+| **Denegación (DoS)** | **SSDP Flood** | Saddam | A | $4.077.266$ | $14.4\text{ min}$ | $26.4\text{ min}$ |
+| **Denegación (DoS)** | **SYN DoS** | Hping3 | A | $2.771.276$ | $18.7\text{ min}$ | $34.1\text{ min}$ |
+| **Denegación (DoS)** | **SSL Renegotiation**| THC-SSL-DOS | A | $6.084.492$ | $10.7\text{ min}$ | $54.9\text{ min}$ |
+| **Botnet Malware** | **Mirai Infection** | Telnet Worm propagation | C, I | $764.137$ | $52.0\text{ min}$ | $66.9\text{ min}$ |
 
 ---
 
 ## 3. Caso de Estudio 1: Inundación y Propagación Masiva (Mirai Botnet)
 
-La botnet Mirai explota credenciales débiles por defecto en dispositivos IoT mediante fuerza bruta sobre el puerto Telnet ($23/2323$), convirtiendo los dispositivos comprometidos en nodos zombis para el lanzamiento de ataques DoS distribuidos[cite: 2].
+La botnet Mirai explota credenciales débiles por defecto en dispositivos IoT mediante fuerza bruta sobre el puerto Telnet ($23/2323$), convirtiendo los dispositivos comprometidos en nodos zombis para el lanzamiento de ataques DoS distribuidos.
 
 ```
                      TRAZA FORENSE MIRAI: FASES DE EVOLUCIÓN DEL RMSE
@@ -112,26 +112,26 @@ La botnet Mirai explota credenciales débiles por defecto en dispositivos IoT me
 ### 3.1 Anatomía de las Cuatro Fases de Ejecución
 
 #### Fase 1: Extracción y Mapeo Estocástico (Paquetes 0 a 2.000)
-* **Comportamiento del Sensor:** Durante el período `FM_grace_period = 2000`, AfterImage alimenta la matriz de distancia correlacional $D_{i,j}$ sin instanciar autoencoders[cite: 1, 2].
-* **Firma Forense:** El residuo de salida es plano y nulo ($RMSE = 0.0$)[cite: 1, 2]. En esta etapa, el árbol dendrograma agrupa los canales en clústeres disjuntos de tamaño $m \le 10$[cite: 2].
+* **Comportamiento del Sensor:** Durante el período `FM_grace_period = 2000`, AfterImage alimenta la matriz de distancia correlacional $D_{i,j}$ sin instanciar autoencoders.
+* **Firma Forense:** El residuo de salida es plano y nulo ($RMSE = 0.0$). En esta etapa, el árbol dendrograma agrupa los canales en clústeres disjuntos de tamaño $m \le 10$.
 
 #### Fase 2: Convergencia Numérica del SGD (Paquetes 2.001 a 3.000)
-* **Comportamiento del Sensor:** KitNET inicializa sus matrices sinápticas con pesos aleatorios procedentes de la distribución uniforme $\mathcal{U}\left(-\frac{1}{dim(\vec{v}_i)}, \, \frac{1}{dim(\vec{v}_i)}\right)$ y ejecuta Descenso de Gradiente Estocástico (SGD) con `max_iter = 1` paquete a paquete[cite: 2].
-* **Firma Forense:** Al acomodarse los hiperplanos a la variedad benigna, se registra un transitorio numérico de ajuste en el paquete **#2543**, donde el residuo experimenta un pico puntual de **$RMSE = 600.74$**[cite: 1, 2]. La calibración analítica log-normal aísla este pico en la dispersión $\hat{\sigma}_{\log}$, impidiendo el falseamiento del umbral[cite: 2].
+* **Comportamiento del Sensor:** KitNET inicializa sus matrices sinápticas con pesos aleatorios procedentes de la distribución uniforme $\mathcal{U}\left(-\frac{1}{dim(\vec{v}_i)}, \, \frac{1}{dim(\vec{v}_i)}\right)$ y ejecuta Descenso de Gradiente Estocástico (SGD) con `max_iter = 1` paquete a paquete.
+* **Firma Forense:** Al acomodarse los hiperplanos a la variedad benigna, se registra un transitorio numérico de ajuste en el paquete **#2543**, donde el residuo experimenta un pico puntual de **$RMSE = 600.74$**. La calibración analítica log-normal aísla este pico en la dispersión $\hat{\sigma}_{\log}$, impidiendo el falseamiento del umbral.
 
 #### Fase 3: Variedad Estacionaria Benigna (Paquetes 3.001 a 7.000)
-* **Comportamiento del Sensor:** Los $k$ micro-autoencoders han completado su convergencia sobre el tráfico legítimo de la red Wi-Fi y los dispositivos IoT[cite: 1, 2].
-* **Firma Forense:** El residuo global se confina dentro de una banda estrecha con una **mediana de $0.1297$** y un **percentil 99 ($p_{99}$) de $0.4155$**[cite: 1]. La reconstrucción sobre el tráfico habitual opera con pérdidas casi despreciables[cite: 2].
+* **Comportamiento del Sensor:** Los $k$ micro-autoencoders han completado su convergencia sobre el tráfico legítimo de la red Wi-Fi y los dispositivos IoT.
+* **Firma Forense:** El residuo global se confina dentro de una banda estrecha con una **mediana de $0.1297$** y un **percentil 99 ($p_{99}$) de $0.4155$**. La reconstrucción sobre el tráfico habitual opera con pérdidas casi despreciables.
 
 #### Fase 4: Compromiso Hostil e Infiltración Telnet (Paquetes 7.001 a 120.000)
-* **Comportamiento del Sensor:** La cámara comprometida inicia el sondeo activo de propagación, inyectando ráfagas continuas de paquetes TCP SYN a destinos aleatorios[cite: 2].
-* **Firma Forense:** El RMSE quiebra el umbral log-normal de alerta $\tau$, alcanzando valores superiores a $10^2$ y picos críticos de **$RMSE > 10^4$**[cite: 1, 2]. Tras el cese de cada ráfaga, la caída del error no es instantánea; exhibe una pendiente continua gobernada por la función amortiguada de AfterImage ($d_\lambda(\Delta t) = 2^{-\lambda \Delta t}$), capturando la inercia del estado de contaminación en la tabla hash[cite: 1, 2].
+* **Comportamiento del Sensor:** La cámara comprometida inicia el sondeo activo de propagación, inyectando ráfagas continuas de paquetes TCP SYN a destinos aleatorios.
+* **Firma Forense:** El RMSE quiebra el umbral log-normal de alerta $\tau$, alcanzando valores superiores a $10^2$ y picos críticos de **$RMSE > 10^4$**. Tras el cese de cada ráfaga, la caída del error no es instantánea; exhibe una pendiente continua gobernada por la función amortiguada de AfterImage ($d_\lambda(\Delta t) = 2^{-\lambda \Delta t}$), capturando la inercia del estado de contaminación en la tabla hash.
 
 ---
 
 ## 4. Caso de Estudio 2: Reconocimiento Sigiloso (Nmap OS Fingerprinting)
 
-Frente a la inundación volumétrica de Mirai, el escaneo de huella de sistema operativo (*OS Fingerprinting*) ejecutado con Nmap representa el paradigma del atacante sigiloso de baja intensidad[cite: 2].
+Frente a la inundación volumétrica de Mirai, el escaneo de huella de sistema operativo (*OS Fingerprinting*) ejecutado con Nmap representa el paradigma del atacante sigiloso de baja intensidad.
 
 ```
                      SONDEO SIGILOSO NMAP: EXPLOSIÓN DE RMSE
@@ -150,23 +150,23 @@ Frente a la inundación volumétrica de Mirai, el escaneo de huella de sistema o
 ```
 
 ### 4.1 Ruptura Estructural de Covarianza en Canales RTP
-1. **Conformidad de Protocolo:** Nmap transmite una secuencia acotada de sondas hacia la cámara (aproximadamente 400 paquetes en la traza sintetizada, y $697.851$ tramas en el dataset de producción extendido)[cite: 1, 2]. Utiliza banderas TCP legales (SYN a puertos cerrados, paquetes Xmas, flags FIN y combinaciones URG/PSH)[cite: 2].
-2. **Ceguera de Firmas Tradicionales:** Ninguna regla estática de inspección de contenido (DPI) dispara la alarma, ya que no existe un *payload* de explotación binaria ni saturación de ancho de banda[cite: 2].
+1. **Conformidad de Protocolo:** Nmap transmite una secuencia acotada de sondas hacia la cámara (aproximadamente 400 paquetes en la traza sintetizada, y $697.851$ tramas en el dataset de producción extendido). Utiliza banderas TCP legales (SYN a puertos cerrados, paquetes Xmas, flags FIN y combinaciones URG/PSH).
+2. **Ceguera de Firmas Tradicionales:** Ninguna regla estática de inspección de contenido (DPI) dispara la alarma, ya que no existe un *payload* de explotación binaria ni saturación de ancho de banda.
 3. **Mecanismo de Detección en Kitsune:**
-   * En condiciones benignas, el canal de la cámara emitía exclusivamente tráfico UDP/RTP con un retardo inter-paquete (*jitter*) regular y una covarianza bidireccional casi estricta entre subida y bajada ($Cov_{S_i, S_j}$)[cite: 2].
-   * La inyección de paquetes TCP altera instantáneamente las estadísticas univariadas de tamaño y conteo en las ventanas rápidas ($\lambda = 5$ y $\lambda = 3$), colapsando las covarianzas bivariadas de canal en AfterImage[cite: 2].
-   * Las micro-redes de KitNET especializadas en retardos y simetría de transporte emiten simultáneamente errores elevados en $L^{(1)}$[cite: 2]. La Capa de Salida ($L^{(2)}$), desacostumbrada a esa discordancia estructural, amplifica el fallo elevando el residuo hasta magnitudes del orden de **$10^{13}$**, permitiendo una separación nítida frente al ruido basal[cite: 1, 2].
+   * En condiciones benignas, el canal de la cámara emitía exclusivamente tráfico UDP/RTP con un retardo inter-paquete (*jitter*) regular y una covarianza bidireccional casi estricta entre subida y bajada ($Cov_{S_i, S_j}$).
+   * La inyección de paquetes TCP altera instantáneamente las estadísticas univariadas de tamaño y conteo en las ventanas rápidas ($\lambda = 5$ y $\lambda = 3$), colapsando las covarianzas bivariadas de canal en AfterImage.
+   * Las micro-redes de KitNET especializadas en retardos y simetría de transporte emiten simultáneamente errores elevados en $L^{(1)}$. La Capa de Salida ($L^{(2)}$), desacostumbrada a esa discordancia estructural, amplifica el fallo elevando el residuo hasta magnitudes del orden de **$10^{13}$**, permitiendo una separación nítida frente al ruido basal.
 
 ---
 
 ## 5. Benchmarks de Detección: Kitsune vs. Estado del Arte (NDSS 2018 Sec. V-D)
 
-Se evaluó la eficacia de Kitsune frente a cinco arquitecturas de referencia bajo condiciones idénticas de extracción de características[cite: 2]:
-* **Suricata (NIDS Basado en Firmas):** Configurado con el repositorio completo de **13.465 reglas de Emerging Threats**[cite: 2].
-* **Isolation Forest (IF):** Algoritmo no supervisado *offline/batch* basado en aislamiento de anomalías por hiperplanos[cite: 2].
-* **Gaussian Mixture Models (GMM):** Modelo probabilístico *offline/batch* entrenado por Maximización de la Esperanza (EM)[cite: 2].
-* **Incremental GMM (GMM Inc.):** Variante probabilística en línea para flujos dinámicos[cite: 2].
-* **pcStream2:** Algoritmo de agrupamiento en streaming basado en distancias de Mahalanobis hacia centroides activos[cite: 2].
+Se evaluó la eficacia de Kitsune frente a cinco arquitecturas de referencia bajo condiciones idénticas de extracción de características:
+* **Suricata (NIDS Basado en Firmas):** Configurado con el repositorio completo de **13.465 reglas de Emerging Threats**.
+* **Isolation Forest (IF):** Algoritmo no supervisado *offline/batch* basado en aislamiento de anomalías por hiperplanos.
+* **Gaussian Mixture Models (GMM):** Modelo probabilístico *offline/batch* entrenado por Maximización de la Esperanza (EM).
+* **Incremental GMM (GMM Inc.):** Variante probabilística en línea para flujos dinámicos.
+* **pcStream2:** Algoritmo de agrupamiento en streaming basado en distancias de Mahalanobis hacia centroides activos.
 
 ### 5.1 Matriz Comparativa Consolidada de Detección
 
@@ -210,15 +210,15 @@ SYN DoS               ROC AUC          0.5000      0.5867      0.8335       0.67
 
 ### 5.2 Hallazgos Forenses Clave
 
-1. **El Colapso Estructural de Suricata:** Suricata obtuvo un área bajo la curva equivalente al azar puro ($\text{ROC AUC} \approx 0.50$) en 7 de los 9 escenarios analizados[cite: 2]. A pesar de cargar $13.465$ firmas activas, fue incapaz de detectar los ataques MitM (ARP, Active Wiretap, Video Injection), los sondeos de Nmap ni las inundaciones volumétricas complejas en la red IoT, demostrando la inoperancia de las firmas ante anomalías puramente cinemáticas o tráfico de red cifrado[cite: 2].
-2. **Superioridad de Kitsune frente a Modelos Offline:** En la detección del *Active Wiretap* (puente transparente que intercepta cables Ethernet físicos), Kitsune con $m=1$ alcanzó un **$\text{ROC AUC} = 0.9993$**, superando ampliamente a los modelos por lotes más potentes como GMM ($0.8788$) e Isolation Forest ($0.5738$), pese a operar con una sola pasada de cómputo en streaming[cite: 2].
-3. **El Efecto Filtro de Ruido en la Capa de Salida ($m=10$ vs. $m=1$):** Aunque teóricamente $m=1$ maximiza la sensibilidad aislando cada dimensión, en vectores complejos como *Active Wiretap* la configuración **$m=10$ obtuvo un $\text{TPR} = 81.08\%$ frente al $17.27\%$ de $m=1$ bajo la cota estricta de falsos positivos ($FPR \le 0.001$)**[cite: 2]. La Capa de Salida ($L^{(2)}$) actúa como un reductor del suelo de ruido basal que aplasta las fluctuaciones irrelevantes y amplifica las anomalías de relación[cite: 2].
+1. **El Colapso Estructural de Suricata:** Suricata obtuvo un área bajo la curva equivalente al azar puro ($\text{ROC AUC} \approx 0.50$) en 7 de los 9 escenarios analizados. A pesar de cargar $13.465$ firmas activas, fue incapaz de detectar los ataques MitM (ARP, Active Wiretap, Video Injection), los sondeos de Nmap ni las inundaciones volumétricas complejas en la red IoT, demostrando la inoperancia de las firmas ante anomalías puramente cinemáticas o tráfico de red cifrado.
+2. **Superioridad de Kitsune frente a Modelos Offline:** En la detección del *Active Wiretap* (puente transparente que intercepta cables Ethernet físicos), Kitsune con $m=1$ alcanzó un **$\text{ROC AUC} = 0.9993$**, superando ampliamente a los modelos por lotes más potentes como GMM ($0.8788$) e Isolation Forest ($0.5738$), pese a operar con una sola pasada de cómputo en streaming.
+3. **El Efecto Filtro de Ruido en la Capa de Salida ($m=10$ vs. $m=1$):** Aunque teóricamente $m=1$ maximiza la sensibilidad aislando cada dimensión, en vectores complejos como *Active Wiretap* la configuración **$m=10$ obtuvo un $\text{TPR} = 81.08\%$ frente al $17.27\%$ de $m=1$ bajo la cota estricta de falsos positivos ($FPR \le 0.001$)**. La Capa de Salida ($L^{(2)}$) actúa como un reductor del suelo de ruido basal que aplasta las fluctuaciones irrelevantes y amplifica las anomalías de relación.
 
 ---
 
 ## 6. Benchmarks de Runtime en Hardware Restringido (NDSS 2018 Sec. V-E)
 
-Para validar la viabilidad de despliegue en conmutadores perimetrales y enrutadores domésticos, se evaluó el rendimiento temporal del ensamble KitNET codificado en C++ sobre dos plataformas de referencia utilizando $n=198$ métricas estadísticas sobre un único núcleo físico/lógico[cite: 2]:
+Para validar la viabilidad de despliegue en conmutadores perimetrales y enrutadores domésticos, se evaluó el rendimiento temporal del ensamble KitNET codificado en C++ sobre dos plataformas de referencia utilizando $n=198$ métricas estadísticas sobre un único núcleo físico/lógico:
 
 ```
 +---------------------------------------------------------------------------------------+
@@ -255,14 +255,14 @@ Para validar la viabilidad de despliegue en conmutadores perimetrales y enrutado
 ### 6.1 Throughput de Paquetes en Streaming
 
 * **Escalamiento en Raspberry Pi 3B:**  
-  * Con un autoencoder monolítico ($k=1$ en $L^{(1)}$), la Raspberry Pi procesa **$\sim 1.000$ paquetes por segundo** en modo ejecución[cite: 2].
-  * Con la descomposición en ensamble particionado ($k=35$ en $L^{(1)}$ con $m \le 10$), la tasa de procesamiento se eleva a **$\sim 5.400$ paquetes por segundo**, multiplicando la velocidad del nodo por un factor de **$5.4\times$**[cite: 2].
+  * Con un autoencoder monolítico ($k=1$ en $L^{(1)}$), la Raspberry Pi procesa **$\sim 1.000$ paquetes por segundo** en modo ejecución.
+  * Con la descomposición en ensamble particionado ($k=35$ en $L^{(1)}$ con $m \le 10$), la tasa de procesamiento se eleva a **$\sim 5.400$ paquetes por segundo**, multiplicando la velocidad del nodo por un factor de **$5.4\times$**.
 * **Escalamiento en Arquitectura x86 (Intel i7-4790):**  
-  * El throughput pasa de **$\sim 7.500$ paquetes por segundo** ($k=1$) a más de **$37.300$ paquetes por segundo** ($k=35$) en modo ejecución, y **$31.000$ pkts/s** durante el entrenamiento online estocástico[cite: 2].
+  * El throughput pasa de **$\sim 7.500$ paquetes por segundo** ($k=1$) a más de **$37.300$ paquetes por segundo** ($k=35$) en modo ejecución, y **$31.000$ pkts/s** durante el entrenamiento online estocástico.
 
 ### 6.2 Latencia de Inferencia y Supresión de Varianza (*Jitter*)
 
-El análisis de densidad temporal sobre el tiempo de procesamiento por paquete en la Raspberry Pi 3B (Fig. 11 de NDSS 2018) evidencia una transformación cualitativa en el comportamiento de la CPU[cite: 2]:
+El análisis de densidad temporal sobre el tiempo de procesamiento por paquete en la Raspberry Pi 3B (Fig. 11 de NDSS 2018) evidencia una transformación cualitativa en el comportamiento de la CPU:
 
 ```
                      DENSIDAD DE TIEMPO DE PROCESAMIENTO (RPi 3B)
@@ -291,14 +291,14 @@ El análisis de densidad temporal sobre el tiempo de procesamiento por paquete e
     (Baja dispersión: Inferencia determinista en <185 μs)
 ```
 
-1. **Eliminación del Cuello de Botella:** La latencia media de ejecución por trama en la Raspberry Pi se desploma desde **$\sim 970\ \mu\text{s}$** hasta **$< 185\ \mu\text{s}$**[cite: 2].
-2. **Supresión del Jitter Interno:** Con $k=1$, la distribución de tiempos es ancha y dispersa, provocando variabilidad indeseada en el procesado de colas[cite: 2]. Con $k=35$, la densidad converge en un pico hiper-concentrado alrededor de $185\ \mu\text{s}$, garantizando determinismo temporal en la absorción de paquetes de red sin desbordar los búferes del sistema operativo[cite: 2].
+1. **Eliminación del Cuello de Botella:** La latencia media de ejecución por trama en la Raspberry Pi se desploma desde **$\sim 970\ \mu\text{s}$** hasta **$< 185\ \mu\text{s}$**.
+2. **Supresión del Jitter Interno:** Con $k=1$, la distribución de tiempos es ancha y dispersa, provocando variabilidad indeseada en el procesado de colas. Con $k=35$, la densidad converge en un pico hiper-concentrado alrededor de $185\ \mu\text{s}$, garantizando determinismo temporal en la absorción de paquetes de red sin desbordar los búferes del sistema operativo.
 
 ---
 
 ## 7. Protocolo de Auditoría y Verificación Local (`kitsune eval`)
 
-Para garantizar la reproducibilidad científica de estos resultados en cualquier entorno de auditoría, la CLI de nuestro proyecto implementa el motor automatizado de evaluación forense en `src/kitsune/metrics.py`[cite: 1]:
+Para garantizar la reproducibilidad científica de estos resultados en cualquier entorno de auditoría, la CLI de nuestro proyecto implementa el motor automatizado de evaluación forense en `src/kitsune/metrics.py`:
 
 ```powershell
 # 1. Ejecutar análisis forense completo contrastando scores contra Ground Truth
@@ -343,4 +343,4 @@ def evaluate_forensic_performance(scores: np.ndarray, labels: np.ndarray) -> dic
 
 ---
 
-*Fin del documento técnico `DOC-GRD-KITSUNE-BENCH-03`. Memoria experimental lista para archivo en el repositorio de documentación técnica, soporte de certificación y base empírica de divulgación tecnológica.*[cite: 1]
+*Fin del documento técnico `DOC-GRD-KITSUNE-BENCH-03`. Memoria experimental lista para archivo en el repositorio de documentación técnica, soporte de certificación y base empírica de divulgación tecnológica.*
