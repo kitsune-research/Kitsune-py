@@ -1,29 +1,52 @@
-# Python / Virtual Environments
+# ==============================================================================
+# KITSUNE NIDS: GITIGNORE DE PRODUCCIÓN
+# ==============================================================================
+
+# Entornos virtuales y dependencias de runtime
 .venv/
 venv/
 ENV/
+env/
+
+# Caché de intérprete y bytecode de Python
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Cython / Build artifacts
-*.so
+# Artefactos de compilación Cython / C-extensions y empaquetado PEP 517
 build/
 dist/
 *.egg-info/
+*.egg
+*.so
+*.pyd
+*.c
+*.html
 
-# Network data captures and output files
+# Capturas de tráfico masivo, datasets y exportaciones numéricas
 *.pcap
+*.pcapng
 *.tsv
+*.pcap.tsv
 *.csv
 *.npy
-.venv/
-__pycache__/
-*.pyc
-*.pcap
-*.pcap.tsv
-*.pcapng
+*.npz
 *.zip
-*.csv
+*.tar.gz
+
+# Archivos de entorno y metadatos del sistema operativo
 .DS_Store
 Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# Cobertura y reportes de pruebas unitarias
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Documentación interna / Estrategia ejecutiva privada (Pre-Launch)
+docs/*EXEC-05*
+docs/private/
