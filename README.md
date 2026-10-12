@@ -72,7 +72,7 @@ Kitsune processes unlabelled packet streams in constant time and memory $O(1)$ t
 ## Documentation & Architecture Guides
 
 ### Mathematical & Architectural Whitepapers
-* 🇬🇧 **[Execution Architecture & Mathematical Bounds (docs/architecture.md)](docs/architecture.md):** Rigorous asymptotic complexity proofs ($\mathcal{O}(k^2)$ vs. $\mathcal{O}(n^2)$), AfterImage $\mathcal{O}(1)$ damped streaming formulation, state-exhaustion DoS pruning dynamics, and log-normal decision boundary derivation.
+* 🇬🇧 **[Execution Architecture & Mathematical Bounds (docs/architecture.md)](docs/architecture.md):** Rigorous asymptotic complexity proofs (*O*(*k*²) vs. *O*(*n*²)), AfterImage *O*(1) damped streaming formulation, state-exhaustion DoS pruning dynamics, and log-normal decision boundary derivation.
 * 🇪🇸 **[Fundamentos Matemáticos y Arquitectura - Español (docs/architecture_es.md)](docs/architecture_es.md):** Demostración formal de complejidad asintótica, mecánica de extracción en streaming y calibración analítica de umbrales.
 
 ### Engineering Field Manuals
@@ -86,7 +86,7 @@ El proyecto cuenta con una especificación técnica y pedagógica exhaustiva div
 
 | Identificador | Título del Documento | Enfoque Técnico y Alcance |
 | :--- | :--- | :--- |
-| [`PED-01`](docs/DOC-GRD-KITSUNE-PED-01.md) | **Manual Pedagógico Interno y Guía de Taller** | Deconstrucción paso a paso de los 6 bloques conceptuales: física de colas en el Edge, modelos mecánicos de AfterImage ($\mathcal{O}(1)$) y KitNET ($\mathcal{O}(k^2)$), calibración analítica log-normal y banco de preguntas de examen para Blue Teams y SOC. |
+| [`PED-01`](docs/DOC-GRD-KITSUNE-PED-01.md) | **Manual Pedagógico Interno y Guía de Taller** | Deconstrucción paso a paso de los 6 bloques conceptuales: física de colas en el Edge, modelos mecánicos de AfterImage (*O*(1)) y KitNET (*O*(*k*²)), calibración analítica log-normal y banco de preguntas de examen para Blue Teams y SOC. |
 | [`ARCH-02`](docs/DOC-GRD-KITSUNE-ARCH-02.md) | **Especificación Formal de Arquitectura y Diseño** | Formulación matemática rigurosa: tuplas estadísticas continuas $IS_{i,\lambda}$, decaimiento exponencial $d_\lambda(t) = 2^{-\lambda \Delta t}$, clustering incremental `corClust`, demostración de reducción cuadrática y contratos de interfaz en Python 3.11. |
 | [`BENCH-03`](docs/DOC-GRD-KITSUNE-BENCH-03.md) | **Informe Forense Experimental y Benchmarks** | Validación empírica (NDSS 2018 Sec. V): análisis forense de los 9 vectores hostiles (Mirai Botnet y sondeo sigiloso Nmap), matriz comparativa frente a Suricata / Isolation Forest / GMM, y métricas de latencia determinista en SoCs embebidos (Raspberry Pi 3B). |
 | [`PROD-04`](docs/DOC-GRD-KITSUNE-PROD-04.md) | **Guía de Despliegue en Producción y Gobernanza BCP** | Patrones de ingesta pasiva fuera de banda (*Out-of-Band* vía SPAN, TAP físico y VPC Traffic Mirroring), integración SIEM mediante formato CEF/JSON, protocolo de mitigación de envenenamiento de línea base (*baseline poisoning*) y plantillas de servicio para `systemd` y Docker. |
