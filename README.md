@@ -91,8 +91,7 @@ El proyecto cuenta con una especificación técnica y pedagógica exhaustiva div
 | [`BENCH-03`](docs/DOC-GRD-KITSUNE-BENCH-03.md) | **Informe Forense Experimental y Benchmarks** | Validación empírica (NDSS 2018 Sec. V): análisis forense de los 9 vectores hostiles (Mirai Botnet y sondeo sigiloso Nmap), matriz comparativa frente a Suricata / Isolation Forest / GMM, y métricas de latencia determinista en SoCs embebidos (Raspberry Pi 3B). |
 | [`PROD-04`](docs/DOC-GRD-KITSUNE-PROD-04.md) | **Guía de Despliegue en Producción y Gobernanza BCP** | Patrones de ingesta pasiva fuera de banda (*Out-of-Band* vía SPAN, TAP físico y VPC Traffic Mirroring), integración SIEM mediante formato CEF/JSON, protocolo de mitigación de envenenamiento de línea base (*baseline poisoning*) y plantillas de servicio para `systemd` y Docker. |
 
-> *Nota:* Las especificaciones se encuentran redactadas en español técnico normativo como parte de la memoria técnica de posgrado (GRD). Las versiones en inglés se incorporarán en fases posteriores del roadmap.
-
+> **Note:** *The core engineering specifications (`PED-01` to `PROD-04`) are currently authored in formal technical Spanish as part of the system's technological risk governance and architectural audit baseline (EQF Level 7 research framework). English versions are scheduled for upcoming roadmap releases.*
 ---
 
 ## Quickstart
