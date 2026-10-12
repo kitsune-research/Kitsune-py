@@ -267,7 +267,7 @@ Kitsune rechaza el uso de máximos empíricos absolutos ($\max(s)$) debido a su 
 ### 3.1 Modelado Paramétrico Log-Normal de Residuos Benignos
 Dado que el score de reconstrucción es no negativo ($s \in [0, \infty)$) y exhibe asimetría positiva con cola extendida, se asume que la variable aleatoria $S$ bajo condiciones estacionarias sigue una distribución log-normal:
 
-$$S \sim \operatorname{Lognormal}\left(\mu_{\log}, \, \sigma_{\log}^2\right) \iff Y = \ln(S) \sim \mathcal{N}\left(\mu_{\log}, \, \sigma_{\log}^2\right)$$
+$$S \sim \mathrm{Lognormal}\left(\mu_{\log}, \, \sigma_{\log}^2\right) \iff Y = \ln(S) \sim \mathcal{N}\left(\mu_{\log}, \, \sigma_{\log}^2\right)$$
 
 
 ### 3.2 Estimación de Máxima Verosimilitud (MLE) en Streaming
@@ -295,7 +295,7 @@ $$\Phi(k) = 1 - 0.001 = 0.999 \implies k = \Phi^{-1}(0.999) \approx \mathbf{3.09
 #### Regla de Decisión en Ejecución (`exec-mode`)
 Para cada paquete entrante con residuo global $s$:
 
-$$\operatorname{Veredicto}(s) = \begin{cases} \text{Benigno (Tráfico Ordinario)}, & \text{si } s \le \tau \\ \text{Anomalía (Alerta Perimetral)}, & \text{si } s > \tau \end{cases}$$
+$$\mathrm{Veredicto}(s) = \begin{cases} \text{Benigno (Tráfico Ordinario)}, & \text{si } s \le \tau \\ \text{Anomalía (Alerta Perimetral)}, & \text{si } s > \tau \end{cases}$$
 
 ---
 
