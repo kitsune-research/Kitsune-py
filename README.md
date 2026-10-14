@@ -230,7 +230,7 @@ python cli.py run data/samples/os_scan_micro.pcap --fm-grace 500 --ad-grace 1000
 ```
 
 ### Forensic Breakdown (NDSS 2018 Table III)
-* **Packets 0 - 500 (Feature Mapping Phase):** AfterImage builds the correlation distance matrix $D_{i,j}$ over continuous RTP/UDP media streams, discovering a topology of **100 features mapped into $k = 33$ autoencoders** ($m \le 10$).
+* **Packets 0 - 500 (Feature Mapping Phase):** AfterImage builds the correlation distance matrix $D_{i,j}$ over continuous RTP/UDP media streams, discovering a topology of **115 features mapped into $k = 33$ autoencoders** ($m \le 10$).
 * **Packets 501 - 1,000 (Benign Manifold Calibration):** Unsupervised SGD parameter tuning across $L^{(1)}$ and $L^{(2)}$ on clean conversational traffic. RMSE scores remain tightly bounded at the noise floor.
 * **Packets 1,001 - 2,233 (Nmap OS Fingerprinting Burst):** Active injection of TCP SYN, NULL, Xmas, and unsolicited RST/ACK response packets. The sudden distortion of channel jitter ($\sigma_i$) and directional packet size covariances ($Cov_{S_i, S_j}$) triggers a sharp, sustained RMSE spike well above the log-normal decision boundary ($\tau$).
 
