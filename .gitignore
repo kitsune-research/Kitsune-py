@@ -50,3 +50,4 @@ htmlcov/
 # Documentación interna / Estrategia ejecutiva privada (Pre-Launch)
 docs/*EXEC-05*
 docs/private/
+kitsune_project_briefing.txt
