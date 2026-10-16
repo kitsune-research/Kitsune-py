@@ -57,3 +57,35 @@ def test_incstatdb_initialization():
     """Comprueba que la base de datos de estadísticas se inicialice correctamente."""
     db = incStatDB(limit=100)
     assert db.limit == 100
+
+from netStat import netStat
+
+def test_afterimage_vector_dimension_100():
+  """Verifica la dimensión del vector generado por netStat (20 características x 5 ventanas = 100).
+
+  Nota arquitectónica: El paper NDSS 2018 define 115 dimensiones (incluyendo 3
+  de jitter por ventana).
+  La implementación en Python procesa 100 dimensiones (4 canales de datagrama
+  sin jitter).
+  """
+  ns = netStat(np.nan, 1000, 1000)
+
+  vector = ns.updateGetStats(
+      0,
+      "00:11:22:33:44:55",
+      "66:77:88:99:AA:BB",
+      "192.168.1.50",
+      "54321",
+      "192.168.1.1",
+      "80",
+      1460.0,
+      1000.0,
+  )
+
+  arr = np.array(vector, dtype=np.float64)
+
+  assert arr.ndim == 1, "El vector debe ser estrictamente unidimensional"
+  assert (
+      arr.shape[0] == 100
+  ), f"Dimensión esperada del extractor 100, obtenida: {arr.shape[0]}"
+  assert not np.isnan(arr).any(), "El vector no puede contener valores NaN"

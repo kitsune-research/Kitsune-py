@@ -30,3 +30,8 @@ kitsune = "cli:main"
 [tool.setuptools]
 py-modules = ["cli", "Kitsune", "AfterImage", "FeatureExtractor", "netStat"]
 packages = ["KitNET"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --strict-markers"
