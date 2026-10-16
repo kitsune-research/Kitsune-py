@@ -41,7 +41,7 @@ class FE:
 
     def _get_tshark_path(self):
         if platform.system() == 'Windows':
-            return 'C:\Program Files\Wireshark\\tshark.exe'
+            return "C:\\Program Files\\Wireshark\\tshark.exe"
         else:
             system_path = os.environ['PATH']
             for path in system_path.split(os.pathsep):
