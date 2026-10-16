@@ -13,7 +13,7 @@ En una arquitectura densa con capas $l^{(1)}, l^{(2)}, l^{(3)}$ donde $\vert{}l^
 
 $$\mathcal{O}(\vert{}l^{(1)}\vert{} \cdot \vert{}l^{(2)}\vert{} + \vert{}l^{(2)}\vert{} \cdot \vert{}l^{(3)}\vert{}) = \mathcal{O}(n \cdot \beta n + \beta n \cdot n) = \mathcal{O}(n^2) \quad \text{(Ecuación 12)}$$
 
-Para el espacio canónico de Kitsune ($n = 115$ características continuas y $\beta = 0.75$), un modelo monolítico demanda aproximadamente $2 \cdot 115 \cdot 87 = 20.010$ operaciones de punto flotante por paquete. En enlaces de alta velocidad con decenas de miles de paquetes por segundo, este coste genera saturación de colas en CPUs embebidas.
+Para el espacio canónico de Kitsune ($n = 100$ características continuas y $\beta = 0.75$), un modelo monolítico demanda aproximadamente $2 \cdot 100 \cdot 75 = 15.000$ operaciones de punto flotante por paquete. En enlaces de alta velocidad con decenas de miles de paquetes por segundo, este coste genera saturación de colas en CPUs embebidas.
 
 ### 1.2. Partición Jerárquica KitNET: Complejidad $\mathcal{O}(k^2)$
 KitNET desacopla el espacio de características proyectando $\vec{x} \in \mathbb{R}^n$ en un conjunto ordenado de $k$ subinstancias disjuntas:
@@ -32,7 +32,7 @@ La complejidad agregada de inferencia y entrenamiento estocástico (SGD con paso
 $$\mathcal{O}(k \cdot m^2 + k^2) = \mathcal{O}(k^2) \quad \text{(Ecuación 13)}$$
 
 Dado que $m \le 10$ actúa como una constante fija del sistema, la complejidad depende exclusivamente del número de autoencoders $k$:
-* **Caso óptimo ($k = \lceil n/m \rceil$):** Con $n = 115$ y $m = 10$, se generan $k \approx 12$ autoencoders. El número de multiplicaciones se reduce a $\approx 1.920$ en $L^{(1)}$ y $\approx 216$ en $L^{(2)}$, acelerando el procesamiento en casi un orden de magnitud frente al modelo monolítico.
+* **Caso óptimo ($k = \lceil n/m \rceil$):** Con $n = 100$ y $m = 10$, se generan $k \approx 12$ autoencoders. El número de multiplicaciones se reduce a $\approx 1.920$ en $L^{(1)}$ y $\approx 216$ en $L^{(2)}$, acelerando el procesamiento en casi un orden de magnitud frente al modelo monolítico.
 * **Escalabilidad empírica:** En un único núcleo ARM Cortex-A53 (Raspberry Pi 3B a 1.2 GHz), KitNET incrementa la tasa de procesamiento de $\approx 1.000$ paquetes/s ($k=1$) a $\approx 5.400$ paquetes/s ($k=35$), y alcanza más de $37.000$ paquetes/s en procesadores x86-64.
 
 ---

@@ -15,7 +15,7 @@ In a fully connected architecture with layers $l^{(1)}, l^{(2)}, l^{(3)}$ where 
 
 $$\mathcal{O}(\vert{}l^{(1)}\vert{} \cdot \vert{}l^{(2)}\vert{} + \vert{}l^{(2)}\vert{} \cdot \vert{}l^{(3)}\vert{}) = \mathcal{O}(n \cdot \beta n + \beta n \cdot n) = \mathcal{O}(n^2) \quad \text{(Equation 12)}$$
 
-For Kitsune's canonical feature space ($n = 115$ continuous statistics, $\beta = 0.75$), a monolithic network requires approximately $2 \cdot 115 \cdot 87 \approx 20,010$ floating-point operations per packet. On high-throughput edge routers handling tens of thousands of packets per second, this computational burden inevitably causes queue exhaustion and packet dropping.
+For Kitsune's canonical feature space ($n = 100$ continuous statistics, $\beta = 0.75$), a monolithic network requires approximately $2 \cdot 100 \cdot 75 = 15.000$ floating-point operations per packet. On high-throughput edge routers handling tens of thousands of packets per second, this computational burden inevitably causes queue exhaustion and packet dropping.
 
 ### 1.2. KitNET Ensemble Partitioning: $\mathcal{O}(k^2)$ Complexity
 KitNET circumvents this bottleneck by projecting $\vec{x} \in \mathbb{R}^n$ into an ordered set of $k$ disjoint sub-instances:
@@ -34,7 +34,7 @@ The overall complexity for forward propagation and single-step Stochastic Gradie
 $$\mathcal{O}(k \cdot m^2 + k^2) = \mathcal{O}(k^2) \quad \text{(Equation 13)}$$
 
 Because $m \le 10$ acts as a constant bound:
-* **Optimal Case ($k = \lceil n/m \rceil$):** When $n = 115$ and $m = 10$, $k \approx 12$ autoencoders are instantiated. Multiplications drop to $\approx 1,920$ in $L^{(1)}$ and $\approx 216$ in $L^{(2)}$, speeding up packet processing by nearly an order of magnitude compared to a monolithic model.
+* **Optimal Case ($k = \lceil n/m \rceil$):** When $n = 100$ and $m = 10$, $k \approx 12$ autoencoders are instantiated. Multiplications drop to $\approx 1,920$ in $L^{(1)}$ and $\approx 216$ in $L^{(2)}$, speeding up packet processing by nearly an order of magnitude compared to a monolithic model.
 * **Empirical Throughput:** Benchmarks demonstrate that KitNET increases single-core processing rates from $\approx 1,000$ packets/s ($k=1$) to $\approx 5,400$ packets/s ($k=35$) on an ARM Cortex-A53 (Raspberry Pi 3B @ 1.2 GHz), exceeding $37,000$ packets/s on commodity x86-64 CPUs.
 
 ---
