@@ -179,27 +179,14 @@ $$\mu = \frac{LS}{w}, \quad \sigma^2 = \left\vert{} \frac{SS}{w} - \left(\frac{L
 
 Completada la operación, **la trama de red se descarta inmediatamente de la memoria RAM**.
 
-### 2.4 Generación del Vector Numérico de 115 Características
-Para que el detector capture tanto ataques instantáneos como maniobras lentas, AfterImage mantiene estas tuplas sobre **cinco ventanas temporales simultáneas**:
+### 2.4 Generación del Vector Numérico en $\mathbb{R}^{100}$
+Para que el detector capture tanto ataques instantáneos como maniobras lentas, AfterImage mantiene estas tuplas sobre **cinco ventanas temporales simultáneas** ($\lambda \in \{5, 3, 1, 0.1, 0.01\}$). 
 
-| Ventana Equivalente | Factor $\lambda$ | Alcance Operativo en Ciberseguridad |
-| :--- | :--- | :--- |
-| **100 ms** | $\lambda = 5$ | Ráfagas extremas, micro-escaneos SYN, ataques de inundación local. |
-| **500 ms** | $\lambda = 3$ | Anomalías en tráfico de voz/vídeo y variaciones repentinas de jitter. |
-| **1.5 s** | $\lambda = 1$ | Comportamiento en sesiones de aplicación (handshakes TCP, consultas DNS). |
-| **10 s** | $\lambda = 0.1$ | Evolución de transferencias de archivos y persistencia de conexiones. |
-| **60 s** | $\lambda = 0.01$ | Tendencia de fondo de la conversación y balizas periódicas lentas. |
+En la formulación de ingeniería, se extraen **20 métricas** de tamaño, peso y covarianza por cada ventana, omitiendo intencionalmente el *jitter* de canal para garantizar el procesamiento en tiempo real:
 
-En cada una de las 5 ventanas temporales se extraen estadísticas agrupadas en **cuatro entidades de comunicación**:
-1. **SrcMAC-IP (8 características):** Tráfico procedente de la dirección MAC e IP emisora (detecta suplantación ARP y cambios de host físico).
-2. **SrcIP (4 características):** Tráfico originado por la dirección IP de origen en general.
-3. **Channel (8 características):** Conversación bidireccional entre la IP de origen y la de destino, correlacionando anchos de banda de subida y bajada.
-4. **Socket (3 características):** Flujo específico a nivel de capa de transporte (IP y puerto origen contra IP y puerto destino).
+$$20 \text{ métricas por ventana} \times 5 \text{ ventanas de decaimiento} = \mathbf{100 \text{ características estadísticas}}$$
 
-$$23 \text{ métricas por ventana} \times 5 \text{ ventanas de decaimiento} = \mathbf{115 \text{ características estadísticas}}$$
-
-
-Cada paquete genera así un vector continuo $\vec{x} \in \mathbb{R}^{115}$ que resume la cinemática de la red en tiempo real.
+Cada paquete genera así un vector continuo $\vec{x} \in \mathbb{R}^{100}$ que resume la cinemática de la red.
 
 ### 2.5 Resiliencia contra Saturación de Tabla (*State-Exhaustion DoS*)
 Un vector común contra los cortafuegos con estado consiste en inundar el enlace con millones de paquetes con IPs de origen falsificadas (*IP spoofing*) para saturar la memoria RAM asignada a las tablas de conexión (`conntrack`).
@@ -251,7 +238,7 @@ En un procesador de router sin aceleración por hardware, esta carga de orden $\
 Para eludir este cuello de botella, KitNET estructura su red en dos niveles desacoplados:
 
 ```
-                     Vector Completo x ∈ ℝ¹¹⁵ (AfterImage)
+                     Vector Completo x ∈ ℝ¹⁰⁰ (AfterImage)
                                        │
                     Mapeador de Características (corClust)
                                        │

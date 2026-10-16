@@ -44,7 +44,7 @@ Paquete Entrante (t_cur, x_cur)
 └──────────────────────────────┬─────────────────────────┘
                                │
                                ▼
-      Trama Descartada de RAM / Vector x ∈ ℝ¹¹⁵ a KitNET
+      Trama Descartada de RAM / Vector x ∈ ℝ¹⁰⁰ a KitNET
 ```
 
 ### 1.1 Dinámica Temporal y Operador de Decaimiento Exponencial
@@ -90,15 +90,16 @@ $$\Lambda = \{\lambda_1=5, \, \lambda_2=3, \, \lambda_3=1, \, \lambda_4=0.1, \, 
 
 
 Estas tasas mapean respectivamente horizontes físicos de **100 ms, 500 ms, 1.5 s, 10 s y 60 s**. En cada ventana temporal se calculan 23 características distribuidas jerárquicamente:
-1. **SrcMAC-IP (8 métricas):** Peso, media y desviación de tamaño saliente; y métricas 2D de host físico.
-2. **SrcIP (4 métricas):** Conteo y volumen univariado del emisor lógico.
-3. **Channel IP-IP (8 métricas):** Volumen bidireccional, covarianzas y retardos de llegada (*jitter*).
-4. **Socket de Transporte (3 métricas):** Conexión activa Capa 4 (IP/Puerto origen contra IP/Puerto destino).
+1. **SrcMAC-IP:** Peso, medias y varianzas unidimensionales, más magnitudes bidireccionales del host físico.
+2. **SrcIP:** Conteo y volumen univariado del emisor lógico.
+3. **Channel IP-IP:** Volumen bidireccional y covarianzas.
+4. **Socket de Transporte:** Conexión activa Capa 4 (IP/Puerto origen contra IP/Puerto destino).
 
-$$23 \text{ métricas por horizonte} \times 5 \text{ valores de } \lambda = \mathbf{115 \text{ dimensiones}}$$
-$\vec{x} \in \mathbb{R}^{115}$
+> **Nota Arquitectónica ($\mathbb{R}^{115}$ vs $\mathbb{R}^{100}$):** El marco teórico original de NDSS 2018 incluía 3 métricas de *jitter* (retardo entre llegadas) por canal, totalizando 23 métricas por ventana. Sin embargo, para maximizar el *throughput* y minimizar ciclos de CPU en el motor `netStat` de producción, estas 3 métricas se excluyen deliberadamente de la extracción online.
 
-*(Nota técnica: En subconjuntos sin capa de transporte TCP/UDP, los campos de socket se normalizan a cero, preservando la dimensión fija de 115 variables).*
+Por tanto, el sistema extrae empíricamente 20 características de datagrama por horizonte:
+$$20 \text{ métricas} \times 5 \text{ valores de } \lambda = \mathbf{100 \text{ dimensiones}}$$
+$\vec{x} \in \mathbb{R}^{100}$
 
 ### 1.4 Mecanismo de Poda Pasiva y Resiliencia Anti-DoS de Estado
 Frente a ataques volumétricos con suplantación de direcciones IP (*IP Spoofing*) concebidos para agotar la tabla de estados (*State-Exhaustion DoS*), AfterImage aplica poda determinista pasiva:

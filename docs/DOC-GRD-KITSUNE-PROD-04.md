@@ -101,7 +101,7 @@ La viabilidad del despliegue en nodos perimetrales depende de la contención de 
     │     AfterImage: Extracción O(1)        │  Huella Hash: ~1 MB para 1.000 flujos
     │     - Tuplas IS en memoria continua    │  Poda Pasiva: w_i < ε (ε = 1e-5)
     └──────────────────┬─────────────────────┘
-                       │ Vector numérico de 115D
+                       │ │ Vector numérico en ℝ¹⁰⁰ (sin jitter)
                        ▼
     ┌────────────────────────────────────────┐
     │     KitNET: Inferencia O(k²)           │  Latencia: < 185 µs en ARM (k=35)
