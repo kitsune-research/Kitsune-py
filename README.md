@@ -274,6 +274,16 @@ All pull requests and commits to `main` must pass the matrix CI workflow:
 
 ---
 
+## 📩 Contact & Research Inquiries
+
+This project is maintained under the **Kitsune Research Group** umbrella. For academic inquiries, architectural discussions, or enterprise deployments, please use the official channels:
+
+* **Bug Reports & Code Architecture:** Open a formal [GitHub Issue](https://github.com/kitsune-research/Kitsune-py/issues).
+* **Feature Requests & Q&A:** Utilize the [GitHub Discussions](https://github.com/kitsune-research/Kitsune-py/discussions) board.
+* **Professional Network:** Connect with the maintainer on [LinkedIn](https://linkedin.com/in/davidsorianosanchez76a2461b7) (mention *Kitsune-py* in your connection request to bypass automated filters).
+
+---
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
