@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kitsune-nids"
-version = "0.2.0"
+version = "0.3.1"
 description = "Modern, reproducible Python implementation of Kitsune NIDS for network anomaly research"
 readme = "README.md"
 requires-python = ">=3.9"
