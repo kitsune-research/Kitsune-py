@@ -85,6 +85,10 @@ The core anomaly detection engine—including the hierarchical correlation clust
 
 ## Documentation & Architecture Guides
 
+### Canonical Release Specifications (v0.3.1 Engineering Baseline)
+* 🇬🇧 **[Technical Memorandum: Engine Architecture v0.3.1 (docs/TECH_MEMO_v0.3.1_ARCHITECTURE.md)](docs/TECH_MEMO_v0.3.1_ARCHITECTURE.md):** Canonical technical memorandum formalizing AfterImage $\mathcal{O}(1)$ damped moments, $\mathbb{R}^{100}$ topology rationale, KitNET incremental agglomerative clustering with strict ceiling $m \le 10$, $\mathcal{O}(k^2)$ ensemble asymptotic complexity proof, and NDSS Sec. VI adversarial state-exhaustion pruning.
+* 🇪🇸 **[Memorando Técnico: Arquitectura del Motor v0.3.1 (docs/TECH_MEMO_v0.3.1_ARCHITECTURE_ES.md)](docs/TECH_MEMO_v0.3.1_ARCHITECTURE_ES.md):** Especificación canónica en español con deducciones matemáticas íntegras, justificación de espacio continuo y mecanismos de defensa frente a saturación de estado.
+
 ### Mathematical & Architectural Whitepapers
 * 🇬🇧 **[Execution Architecture & Mathematical Bounds (docs/architecture.md)](docs/architecture.md):** Rigorous asymptotic complexity proofs (*O*(*k*²) vs. *O*(*n*²)), AfterImage *O*(1) damped streaming formulation, state-exhaustion DoS pruning dynamics, and log-normal decision boundary derivation.
 * 🇪🇸 **[Fundamentos Matemáticos y Arquitectura - Español (docs/architecture_es.md)](docs/architecture_es.md):** Demostración formal de complejidad asintótica, mecánica de extracción en streaming y calibración analítica de umbrales.
@@ -92,7 +96,6 @@ The core anomaly detection engine—including the hierarchical correlation clust
 ### Engineering Field Manuals
 * 🇬🇧 **[Practical Engineering Field Guide (docs/manual_en.md)](docs/manual_en.md):** End-to-end operational guide, CLI walkthrough, and Mirai benchmark forensics.
 * 🇪🇸 **[Manual Práctico de Ingeniería (docs/manual_es.md)](docs/manual_es.md):** Arquitectura explicada con diagramas de flujo, manual paso a paso de la CLI y análisis forense.
-
 
 ### Core Engineering Specifications (Corpus Técnico GRD / EQF 7)
 
