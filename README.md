@@ -3,6 +3,7 @@
 <div align="center">
 
 [![Kitsune CI Pipeline](https://github.com/kitsune-research/Kitsune-py/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/kitsune-research/Kitsune-py/actions/workflows/ci.yml)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kitsune-research/Kitsune-py/blob/main/notebooks/01_quickstart_mirai_demo.ipynb)
 [![Python Version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue.svg)](https://github.com/kitsune-research/Kitsune-py)
 [![NumPy 2.x Ready](https://img.shields.io/badge/NumPy-2.x%20Ready-013243.svg?logo=numpy&logoColor=white)](https://numpy.org/)
 [![Release](https://img.shields.io/badge/release-v0.3.1-orange.svg)](https://github.com/kitsune-research/Kitsune-py/releases)
