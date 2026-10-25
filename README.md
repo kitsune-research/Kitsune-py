@@ -16,7 +16,7 @@
   <img src="docs/assets/optimized_kitsune-nids-v0.3.1-architecture-banner.jpg" alt="Kitsune NIDS Architecture Overview: AfterImage, corClust, KitNET" width="100%">
 </p>
 
-*Plug-and-play network anomaly detector executing incremental feature extraction in $\mathcal{O}(1)$ and ensemble inference bounded by $\mathcal{O}(k^2)$.*
+*Plug-and-play network anomaly detector executing incremental feature extraction in `O(1)` and ensemble inference bounded by `O(k²)`.`*
 
 </div>
 
