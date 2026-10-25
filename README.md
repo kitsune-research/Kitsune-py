@@ -1,17 +1,26 @@
-# Kitsune NIDS (Python 3 Modernized)
-
 <div align="center">
 
-[![Kitsune CI Pipeline](https://github.com/kitsune-research/Kitsune-py/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/kitsune-research/Kitsune-py/actions/workflows/ci.yml)
+# 🦊 Kitsune NIDS (v0.3.1)
+### Unsupervised Online Network Intrusion Detection via Ensembles of Autoencoders
+
+[![CI Pipeline](https://github.com/kitsune-research/Kitsune-py/actions/workflows/ci.yml/badge.svg)](https://github.com/kitsune-research/Kitsune-py/actions)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kitsune-research/Kitsune-py/blob/main/notebooks/01_quickstart_mirai_demo.ipynb)
-[![Python Version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue.svg)](https://github.com/kitsune-research/Kitsune-py)
-[![NumPy 2.x Ready](https://img.shields.io/badge/NumPy-2.x%20Ready-013243.svg?logo=numpy&logoColor=white)](https://numpy.org/)
-[![Release](https://img.shields.io/badge/release-v0.3.1-orange.svg)](https://github.com/kitsune-research/Kitsune-py/releases)
-[![Paper NDSS 2018](https://img.shields.io/badge/Paper-NDSS%202018-red.svg)](https://doi.org/10.14722/ndss.2018.23204)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue.svg)](https://www.python.org/)
+[![NumPy 2.x](https://img.shields.io/badge/NumPy-2.x%20Ready-013243.svg?logo=numpy&logoColor=white)](https://numpy.org/)
+[![NDSS 2018](https://img.shields.io/badge/Paper-NDSS%202018-red.svg)](https://doi.org/10.14722/ndss.2018.23204)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+<br>
+
+<p align="center">
+  <img src="docs/assets/optimized_kitsune-nids-v0.3.1-architecture-banner.jpg" alt="Kitsune NIDS Architecture Overview: AfterImage, corClust, KitNET" width="100%">
+</p>
+
+*Plug-and-play network anomaly detector executing incremental feature extraction in $\mathcal{O}(1)$ and ensemble inference bounded by $\mathcal{O}(k^2)$.*
 
 </div>
 
+---
 A modern, reproducible, and production-ready Python 3 implementation of **Kitsune**, an unsupervised online Network Intrusion Detection System (NIDS) powered by an ensemble of autoencoders (KitNET).
 
 Based on the foundational research paper:
