@@ -1,0 +1,243 @@
+import json
+from pathlib import Path
+
+notebook_content = {
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# 🦊 Kitsune NIDS: Quickstart Anomaly Detection Demo (Mirai Botnet)\n",
+    "**Canonical Reference:** Y. Mirsky et al., *Kitsune: An Ensemble of Autoencoders for Online Network Intrusion Detection*, **NDSS 2018** (DOI: [10.14722/ndss.2018.23204](https://doi.org/10.14722/ndss.2018.23204)).  \n",
+    "**Engineering Organization:** [kitsune-research](https://github.com/kitsune-research/Kitsune-py) | **Release:** `v0.3.1`\n",
+    "\n",
+    "---\n",
+    "\n",
+    "### Abstract & Execution Scope\n",
+    "This interactive notebook demonstrates unsupervised online network intrusion detection directly in your browser. \n",
+    "The engine continuously ingests raw network packets, extracts 100 continuous statistical features in $\\mathcal{O}(1)$ time complexity using damped exponential windows (AfterImage), and detects anomalous traffic patterns via an ensemble of lightweight autoencoders (KitNET) bounded by $\\mathcal{O}(k^2)$ complexity."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 1. Environment Bootstrap & Ingestion Setup\n",
+    "In a Google Colab environment, we clone the canonical repository and install dependencies in headless mode."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": None,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import sys\n",
+    "from pathlib import Path\n",
+    "\n",
+    "# Check if running on Google Colab or local environment\n",
+    "IN_COLAB = 'google.colab' in str(get_ipython())\n",
+    "\n",
+    "if IN_COLAB:\n",
+    "    print(\"[*] Running in Google Colab environment. Bootstrapping repository...\")\n",
+    "    !git clone --depth 1 https://github.com/kitsune-research/Kitsune-py.git repo\n",
+    "    %cd repo\n",
+    "    !pip install --upgrade pip\n",
+    "    !pip install -e .\n",
+    "    DATA_FILE = Path(\"mirai.pcap\")\n",
+    "else:\n",
+    "    print(\"[*] Running in local environment.\")\n",
+    "    DATA_FILE = Path(\"../mirai.pcap\") if Path(\"../mirai.pcap\").exists() else Path(\"mirai.pcap\")\n",
+    "\n",
+    "print(f\"[+] Verification: Data file located at {DATA_FILE.resolve()} (Exists: {DATA_FILE.exists()})\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 2. Streaming Ingestion & Real-Time Anomaly Scoring\n",
+    "We process 15,000 continuous packets from the bundled Mirai trace:\n",
+    "* **`FMgrace = 2,000`:** Incremental feature mapping (corClust discovers correlation topology and sets cluster ceiling $m \\le 10$).\n",
+    "* **`ADgrace = 5,000`:** Baseline manifold training via online single-pass SGD (`max_iter = 1`). Packets are discarded from memory immediately.\n",
+    "* **Packets > 7,000:** Active Mirai botnet distributed scan and propagation phase."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": None,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import time\n",
+    "import numpy as np\n",
+    "from Kitsune import Kitsune\n",
+    "\n",
+    "PACKET_LIMIT = 15000\n",
+    "MAX_AE = 10\n",
+    "FM_GRACE = 2000\n",
+    "AD_GRACE = 5000\n",
+    "\n",
+    "print(f\"[*] Initializing Kitsune NIDS Engine...\")\n",
+    "k_engine = Kitsune(\n",
+    "    file_path=str(DATA_FILE),\n",
+    "    limit=PACKET_LIMIT,\n",
+    "    max_autoencoder_size=MAX_AE,\n",
+    "    FMgrace=FM_GRACE,\n",
+    "    ADgrace=AD_GRACE\n",
+    ")\n",
+    "\n",
+    "rmse_scores = []\n",
+    "start_time = time.perf_counter()\n",
+    "\n",
+    "print(\"[*] Processing streaming packet queue...\")\n",
+    "count = 0\n",
+    "while True:\n",
+    "    rmse = k_engine.proc_next_packet()\n",
+    "    if rmse == -1:\n",
+    "        break\n",
+    "    rmse_scores.append(rmse)\n",
+    "    count += 1\n",
+    "    if count % 2500 == 0:\n",
+    "        elapsed = time.perf_counter() - start_time\n",
+    "        fps = count / elapsed\n",
+    "        print(f\"    -> Ingested {count:5d} packets | Current RMSE: {rmse:8.4f} | Throughput: {fps:6.1f} pkt/sec\")\n",
+    "\n",
+    "total_time = time.perf_counter() - start_time\n",
+    "print(f\"\\n[+] Completed: {len(rmse_scores)} packets evaluated in {total_time:.2f}s ({len(rmse_scores)/total_time:.1f} pkt/s)\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 3. Dynamic Thresholding (Analytical Log-Normal Fit)\n",
+    "Rather than relying on fragile empirical maximums, we model the normal reconstruction residue during the stabilized baseline window ($3,000 \\le t \\le 7,000$) using a parametric log-normal distribution:\n",
+    "$$\\ln(\\mathrm{RMSE}) \\sim \\mathcal{N}(\\mu_{\\ln}, \\sigma_{\\ln}^2) \\implies \\tau = \\exp(\\mu_{\\ln} + k \\cdot \\sigma_{\\ln})$$\n",
+    "Setting $k = 3.0902$ bounds the theoretical False Positive Rate to $\\mathrm{FPR} \\le 0.001$ (at most 1 false alarm per 1,000 benign packets)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": None,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Filter out transient initialization artifacts before stabilization\n",
+    "baseline_window = [s for s in rmse_scores[3000:7000] if s > 0]\n",
+    "\n",
+    "log_baseline = np.log(baseline_window)\n",
+    "mu_log = np.mean(log_baseline)\n",
+    "sigma_log = np.std(log_baseline)\n",
+    "\n",
+    "# Statistical threshold for FPR <= 0.001 (z-score = 3.0902)\n",
+    "k_risk = 3.0902\n",
+    "tau = np.exp(mu_log + k_risk * sigma_log)\n",
+    "\n",
+    "print(f\"[+] Benign Manifold Baseline:\")\n",
+    "print(f\"    - Log Mean (mu_log)       : {mu_log:.4f}\")\n",
+    "print(f\"    - Log StdDev (sigma_log)  : {sigma_log:.4f}\")\n",
+    "print(f\"    - Calibrated Cutoff (tau) : {tau:.4f}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 4. Forensic Trajectory Visualization\n",
+    "Rendering the continuous RMSE response on a semilogarithmic scale against the calibrated decision boundary $\\tau$."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": None,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import matplotlib.pyplot as plt\n",
+    "\n",
+    "plt.figure(figsize=(14, 6), dpi=140)\n",
+    "plt.style.use('dark_background')\n",
+    "\n",
+    "x_axis = np.arange(len(rmse_scores))\n",
+    "plt.plot(x_axis, rmse_scores, color='#38bdf8', lw=1.2, label='KitNET RMSE Residue', alpha=0.9)\n",
+    "plt.axhline(y=tau, color='#f43f5e', linestyle='--', lw=1.8, label=f'Decision Boundary $\\\\tau = {tau:.4f}$ (FPR $\\\\le 10^{{-3}}$)')\n",
+    "\n",
+    "# Phase demarcations\n",
+    "plt.axvspan(0, FM_GRACE, color='#64748b', alpha=0.25, label='corClust Feature Mapping')\n",
+    "plt.axvspan(FM_GRACE, AD_GRACE, color='#eab308', alpha=0.15, label='Online SGD Calibration')\n",
+    "plt.axvspan(7000, len(rmse_scores), color='#ef4444', alpha=0.20, label='Mirai Botnet Infiltration')\n",
+    "\n",
+    "plt.yscale('log')\n",
+    "plt.title('Kitsune NIDS: Online Streaming Anomaly Detection (Mirai Botnet Evaluation)', fontsize=13, pad=12)\n",
+    "plt.xlabel('Evaluated Packets (Continuous Datastream)', fontsize=10)\n",
+    "plt.ylabel('RMSE Reconstruction Error (Log Scale)', fontsize=10)\n",
+    "plt.grid(True, which='both', ls=':', alpha=0.25)\n",
+    "plt.legend(loc='upper left', framealpha=0.85)\n",
+    "plt.tight_layout()\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 5. Quantitative Verification & Forensic Separation\n",
+    "We quantify the signal-to-noise ratio (SNR) of the anomalous attack phase ($t \\ge 7,000$) compared to the benign baseline floor."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": None,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "attack_scores = np.array(rmse_scores[7000:])\n",
+    "baseline_scores = np.array(rmse_scores[3000:7000])\n",
+    "\n",
+    "detected_attacks = np.sum(attack_scores > tau)\n",
+    "detection_ratio = (detected_attacks / len(attack_scores)) * 100\n",
+    "snr_median = np.median(attack_scores) / np.median(baseline_scores)\n",
+    "peak_separation = np.max(attack_scores) / np.median(baseline_scores)\n",
+    "\n",
+    "print(f\"===============================================================\")\n",
+    "print(f\" KITSUNE NIDS: RUNTIME FORENSIC SUMMARY\")\n",
+    "print(f\"===============================================================\")\n",
+    "print(f\" Total attack packets evaluated   : {len(attack_scores):,}\")\n",
+    "print(f\" Flagged packets above threshold  : {detected_attacks:,} ({detection_ratio:.2f}%)\")\n",
+    "print(f\" Separation vs Median Baseline    : {snr_median:.2f}x\")\n",
+    "print(f\" Peak Anomaly vs Noise Floor      : {peak_separation:.2f}x\")\n",
+    "print(f\"===============================================================\")"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbformat": 4,
+   "nbformat_minor": 2,
+   "pygments_lexer": "ipython3",
+   "version": "3.11.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
+
+output_path = Path("notebooks/01_quickstart_mirai_demo.ipynb")
+output_path.parent.mkdir(parents=True, exist_ok=True)
+with open(output_path, "w", encoding="utf-8") as f:
+    json.dump(notebook_content, f, indent=2)
+
+print(f"[+] Canonical Notebook successfully written to: {output_path.resolve()}")
