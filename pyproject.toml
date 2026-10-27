@@ -21,14 +21,16 @@ dependencies = [
     "numpy>=1.24.0",
     "scipy>=1.10.0",
     "scapy>=2.5.0",
-    "matplotlib>=3.7.0"
+    "matplotlib>=3.7.0",
+    "typer>=0.9.0",
+    "rich>=13.0.0"
 ]
 
 [project.scripts]
 kitsune = "cli:main"
 
 [tool.setuptools]
-py-modules = ["cli", "Kitsune", "AfterImage", "FeatureExtractor", "netStat"]
+py-modules = ["cli", "Kitsune", "AfterImage", "FeatureExtractor", "netStat", "metrics"]
 packages = ["KitNET"]
 
 [tool.pytest.ini_options]

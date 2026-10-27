@@ -51,3 +51,9 @@ htmlcov/
 docs/*EXEC-05*
 docs/private/
 kitsune_project_briefing.txt
+
+# Visual Studio Code / IDE settings locales
+.vscode/
+# Ephemeral demo & test outputs
+demo_scores.csv
+

@@ -14,12 +14,14 @@ import numpy as np
 
 # Importaciones del paquete Kitsune
 try:
-    from kitsune import Kitsune
-    from kitsune.metrics import compute_roc_metrics
-except ImportError:
-    # Fallback por compatibilidad con layout plano legacy
     from Kitsune import Kitsune
+except ImportError:
+    from kitsune import Kitsune  # Fallback si en el futuro migramos a src/
+
+try:
     from metrics import compute_roc_metrics
+except ImportError:
+    compute_roc_metrics = None
 
 def run_pipeline(
     path: str,
