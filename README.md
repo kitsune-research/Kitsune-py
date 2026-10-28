@@ -1,26 +1,16 @@
-<div align="center">
-
-# ðŸ¦Š Kitsune NIDS (v0.3.1)
+# Kitsune NIDS (v0.3.1)
 ### Unsupervised Online Network Intrusion Detection via Ensembles of Autoencoders
 
 [![CI Pipeline](https://github.com/kitsune-research/Kitsune-py/actions/workflows/ci.yml/badge.svg)](https://github.com/kitsune-research/Kitsune-py/actions)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kitsune-research/Kitsune-py/blob/main/notebooks/01_quickstart_mirai_demo.ipynb)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue.svg)](https://www.python.org/)
+[![Python Version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue.svg)](https://www.python.org/)
 [![NumPy 2.x](https://img.shields.io/badge/NumPy-2.x%20Ready-013243.svg?logo=numpy&logoColor=white)](https://numpy.org/)
-[![NDSS 2018](https://img.shields.io/badge/Paper-NDSS%202018-red.svg)](https://doi.org/10.14722/ndss.2018.23204)
+[![Paper: NDSS 2018](https://img.shields.io/badge/Paper-NDSS%202018-red.svg)](https://doi.org/10.14722/ndss.2018.23204)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-<br>
-
-<p align="center">
-  <img src="docs/assets/optimized_kitsune-nids-v0.3.1-architecture-banner.jpg" alt="Kitsune NIDS Architecture Overview: AfterImage, corClust, KitNET" width="100%">
-</p>
-
-*Plug-and-play network anomaly detector executing incremental feature extraction in `O(1)` and ensemble inference bounded by `O(kÂ²)`.`*
-
-</div>
+*Plug-and-play network anomaly detector executing incremental feature extraction in O(1) and ensemble inference bounded by O(k2).*
 
 ---
+
 A modern, reproducible, and production-ready Python 3 implementation of **Kitsune**, an unsupervised online Network Intrusion Detection System (NIDS) powered by an ensemble of autoencoders (KitNET).
 
 Based on the foundational research paper:
@@ -35,95 +25,48 @@ Based on the foundational research paper:
 Kitsune is designed for resource-constrained network edge devices (e.g., IoT gateways, industrial SCADA perimeters, embedded routers) requiring real-time, online anomaly detection without external GPU offloading or manual label curation.
 
 This modernized repository addresses structural limitations of the legacy academic release:
-* **Zero-Friction CLI Suite:** Native subcommands for streaming execution (`kitsune run`), visual demonstrations (`kitsune demo`), and automated forensic evaluation (`kitsune eval`).
-* **State-Exhaustion DoS Resilience (NDSS Sec. VI):** Implemented amortized $O(1)$ pruning within `AfterImage.incStatDB` to purge stale flow states ($w_i < \epsilon$), bounding memory footprint under spoofed IP floods.
-* **Analytical Log-Normal Dynamic Thresholding:** Parametric baseline fitting ($\tau = \exp(\mu_{\log} + k \cdot \sigma_{\log})$) replacing brittle empirical maximums, neutralizing SGD initial convergence artifacts.
-* **NDSS 2018 Forensic Metrics Engine:** Built-in evaluation module (`metrics.py`) providing ROC AUC, Equal Error Rate ($EER$), and True Positive Rate ($TPR$) / False Negative Rate ($FNR$) constrained at ultra-low False Positive Rates ($FPR \le 0.001$).
-* **Modern Packaging & Ecosystem Readiness:** Fully standard PEP 517/621 packaging (`pyproject.toml`) and backward-compatible adaptive numerical integration supporting both NumPy 1.x and NumPy 2.x runtimes.
+* **Zero-Friction CLI Suite:** Native subcommands powered by Typer and Rich for continuous streaming execution (`kitsune run`), visual demonstrations (`kitsune demo`), and automated forensic evaluation (`kitsune eval`).
+* **Defensive Numerical Normalization:** Hardened `KitNET/dA.py` against gradient saturation on unobserved packet bursts via bounded clipping (clip(x, -1.0, 2.0)), eliminating catastrophic RMSE explosions (reducing peak baseline residue from 681.91 down to 0.9595).
+* **State-Exhaustion DoS Resilience (NDSS Sec. VI):** Amortized O(1) pruning within `AfterImage.incStatDB` to purge stale flow states (w_i < epsilon), bounding memory footprint under spoofed IP floods.
+* **Analytical Log-Normal Dynamic Thresholding:** Parametric baseline fitting (tau = exp(mu_log + k * sigma_log)) replacing brittle empirical maximums, neutralizing SGD initial convergence artifacts.
+* **NDSS 2018 Forensic Metrics Engine:** Built-in evaluation module (`metrics.py`) providing ROC AUC, Equal Error Rate (EER), and True Positive Rate (TPR) / False Negative Rate (FNR) constrained at ultra-low False Positive Rates (FPR <= 0.001) strictly in execution mode (`--skip-grace`).
+* **Modern Packaging & Ecosystem Readiness:** Fully standard PEP 517/621 packaging (`pyproject.toml`) and cross-platform matrix CI workflow supporting Python 3.9, 3.10, and 3.11 runtimes on Linux and Windows.
 
 ---
 
 ## Architectural Blueprint
 
-Kitsune processes unlabelled packet streams in constant time and memory $O(1)$ through four sequential stages:
+Kitsune processes unlabelled packet streams in constant time and memory O(1) through four sequential stages:
 
-```
-+-------------------------------------------------------------------------------+
-| Raw Packets (PCAP / Live Interface via Scapy)                                 |
-+-------------------------------------------------------------------------------+
-                                  |
-                                  v
-+-------------------------------------------------------------------------------+
-| 1. Feature Extractor (AfterImage)                                             |
-|    - 115 1D/2D statistics across 5 damped windows (lambda: 100ms to 1min)     |
-|    - Damped decay factor: d_lambda(t) = 2^(-lambda * dt)                      |
-|    - O(1) state-pruning for memory exhaustion defense (NDSS Sec. VI)          |
-+-------------------------------------------------------------------------------+
-                                  |
-                                  v
-+-------------------------------------------------------------------------------+
-| 2. Feature Mapper (corClust)                                                 |
-|    - Incremental correlation distance clustering: D = 1 - C_ij / sqrt(ci*cj)  |
-|    - Dendrogram partitioned to bound sub-autoencoder size to max_ae (m)       |
-+-------------------------------------------------------------------------------+
-                                  |
-                                  v
-+-------------------------------------------------------------------------------+
-| 3. Ensemble Layer (KitNET L1)                                                 |
-|    - k independent 3-layer autoencoders (compression ratio beta = 0.75)       |
-|    - 1-pass online SGD training (max_iter = 1) over benign traffic            |
-+-------------------------------------------------------------------------------+
-                                  |
-                                  v
-+-------------------------------------------------------------------------------+
-| 4. Output Layer (KitNET L2) & Forensic Thresholding                           |
-|    - Autoencoder scoring non-linear relationships across subspace RMSEs       |
-|    - Analytical dynamic threshold: tau = exp(mu_log + k * sigma_log)          |
-+-------------------------------------------------------------------------------+
-```
-### ðŸ“ Architectural Note: Feature Space Dimensionality (115 vs. 100)
+1. **Feature Extractor (AfterImage):** 100 continuous 1D/2D statistics across 5 damped windows (lambda: 100ms to 1min). Damped decay factor: d_lambda(t) = 2^(-lambda * dt). O(1) state-pruning for memory exhaustion defense (NDSS Sec. VI).
+2. **Feature Mapper (corClust):** Incremental correlation distance clustering: D = 1 - C_ij / sqrt(ci * cj). Dendrogram partitioned to bound sub-autoencoder size to max_ae (m <= 10).
+3. **Ensemble Layer (KitNET L1):** k independent 3-layer autoencoders (compression ratio beta = 0.75). 1-pass online SGD training (max_iter = 1) over benign traffic. Min-max normalization defensively saturated in [-1.0, 2.0].
+4. **Output Layer (KitNET L2) & Forensic Thresholding:** Single integrator autoencoder scoring non-linear relationships across subspace RMSEs. Analytical dynamic threshold: tau = exp(mu_log + k * sigma_log).
 
-Engineers and researchers comparing this implementation against the foundational NDSS 2018 paper may notice a deliberate divergence in the dimensionality of the extracted feature vectors.
+### Architectural Note: Feature Space Dimensionality (115 vs. 100)
 
-* **The Theoretical Formulation ($\mathbb{R}^{115}$):** The original paper (Table II) mathematically defines a topology of 115 features mapped into the autoencoder ensemble. This is achieved by extracting 23 statistical metrics across 5 damped time windows.
-* **The Implementation Reality ($\mathbb{R}^{100}$):** This production-ready repository operates strictly in a 100-dimensional continuous space (20 metrics $\times$ 5 windows). 
-* **The Root Cause:** The 15 omitted features correspond to the *channel jitter* (inter-packet delay) statistics. While theorized in the paper to capture timing-based anomalies, they were intentionally bypassed in the canonical Python `netStat` engine to optimize the datagram processing loop and reduce raw computational overhead.
-
-The core anomaly detection engineâ€”including the hierarchical correlation clustering ($m \le 10$) and the online Stochastic Gradient Descent (SGD)â€”dynamically and deterministically adapts to this $\mathbb{R}^{100}$ space without any degradation in its architectural integrity.
+Engineers comparing this implementation against the foundational NDSS 2018 paper may notice a deliberate divergence in feature dimensionality:
+* **The Theoretical Formulation (R11?):** The paper (Table II) defines 115 features by extracting 23 statistical metrics across 5 damped time windows.
+* **The Implementation Reality (R1??):** This production repository operates strictly in a 100-dimensional continuous space (20 metrics x 5 windows).
+* **The Rationale:** The 15 omitted features correspond to channel jitter (inter-packet delay) statistics. Bypassing them in the continuous streaming loop avoids redundant timestamp diffing and optimizes packet ingestion throughput while preserving full anomaly detection fidelity.
 
 ---
 
 ## Documentation & Architecture Guides
 
 ### Canonical Release Specifications (v0.3.1 Engineering Baseline)
-* ðŸ‡¬ðŸ‡§ **[Technical Memorandum: Engine Architecture v0.3.1 (docs/TECH_MEMO_v0.3.1_ARCHITECTURE.md)](docs/TECH_MEMO_v0.3.1_ARCHITECTURE.md):** Canonical technical memorandum formalizing AfterImage $\mathcal{O}(1)$ damped moments, $\mathbb{R}^{100}$ topology rationale, KitNET incremental agglomerative clustering with strict ceiling $m \le 10$, $\mathcal{O}(k^2)$ ensemble asymptotic complexity proof, and NDSS Sec. VI adversarial state-exhaustion pruning.
-* ðŸ‡ªðŸ‡¸ **[Memorando TÃ©cnico: Arquitectura del Motor v0.3.1 (docs/TECH_MEMO_v0.3.1_ARCHITECTURE_ES.md)](docs/TECH_MEMO_v0.3.1_ARCHITECTURE_ES.md):** EspecificaciÃ³n canÃ³nica en espaÃ±ol con deducciones matemÃ¡ticas Ã­ntegras, justificaciÃ³n de espacio continuo y mecanismos de defensa frente a saturaciÃ³n de estado.
+* [Technical Memorandum: Engine Architecture v0.3.1 (docs/TECH_MEMO_v0.3.1_ARCHITECTURE.md)](docs/TECH_MEMO_v0.3.1_ARCHITECTURE.md): Canonical memorandum formalizing AfterImage O(1) damped moments, R1?? topology, KitNET agglomerative clustering (m <= 10), O(k2) asymptotic complexity proof, and state-exhaustion pruning.
+* [Memorando T¨¦cnico: Arquitectura del Motor v0.3.1 (docs/TECH_MEMO_v0.3.1_ARCHITECTURE_ES.md)](docs/TECH_MEMO_v0.3.1_ARCHITECTURE_ES.md): Especificaci¨®n can¨®nica en espa?ol con deducciones matem¨¢ticas ¨ªntegras y mecanismos de defensa frente a saturaci¨®n de estado.
 
-### Mathematical & Architectural Whitepapers
-* ðŸ‡¬ðŸ‡§ **[Execution Architecture & Mathematical Bounds (docs/architecture.md)](docs/architecture.md):** Rigorous asymptotic complexity proofs (*O*(*k*Â²) vs. *O*(*n*Â²)), AfterImage *O*(1) damped streaming formulation, state-exhaustion DoS pruning dynamics, and log-normal decision boundary derivation.
-* ðŸ‡ªðŸ‡¸ **[Fundamentos MatemÃ¡ticos y Arquitectura - EspaÃ±ol (docs/architecture_es.md)](docs/architecture_es.md):** DemostraciÃ³n formal de complejidad asintÃ³tica, mecÃ¡nica de extracciÃ³n en streaming y calibraciÃ³n analÃ­tica de umbrales.
+### Core Engineering Specifications (Corpus T¨¦cnico GRD / EQF 7)
+* `PED-01`: Manual Pedag¨®gico Interno y Gu¨ªa de Taller (docs/DOC-GRD-KITSUNE-PED-01.md): Deconstrucci¨®n de f¨ªsica de colas en el Edge, modelos mec¨¢nicos de AfterImage (O(1)) y KitNET (O(k2)), calibraci¨®n anal¨ªtica log-normal y banco de evaluaci¨®n para Blue Teams y SOC.
+* `ARCH-02`: Especificaci¨®n Formal de Arquitectura y Dise?o (docs/DOC-GRD-KITSUNE-ARCH-02.md): Formulaci¨®n matem¨¢tica de tuplas estad¨ªsticas continuas, decaimiento exponencial d_lambda(t) = 2^(-lambda * dt), clustering incremental corClust y reducci¨®n cuadr¨¢tica.
+* `BENCH-03`: Informe Forense Experimental y Benchmarks (docs/DOC-GRD-KITSUNE-BENCH-03.md): Validaci¨®n emp¨ªrica (NDSS 2018 Sec. V): an¨¢lisis forense de vectores hostiles (Mirai Botnet y escaneo Nmap), comparativa frente a Suricata / Isolation Forest / GMM y latencia determinista.
+* `PROD-04`: Gu¨ªa de Despliegue en Producci¨®n y Gobernanza BCP (docs/DOC-GRD-KITSUNE-PROD-04.md): Patrones de ingesta pasiva fuera de banda (SPAN, TAP f¨ªsico y VPC Mirroring), integraci¨®n SIEM en formato CEF/JSON, mitigaci¨®n de baseline poisoning y plantillas de servicio.
 
-### Engineering Field Manuals
-* ðŸ‡¬ðŸ‡§ **[Practical Engineering Field Guide (docs/manual_en.md)](docs/manual_en.md):** End-to-end operational guide, CLI walkthrough, and Mirai benchmark forensics.
-* ðŸ‡ªðŸ‡¸ **[Manual PrÃ¡ctico de IngenierÃ­a (docs/manual_es.md)](docs/manual_es.md):** Arquitectura explicada con diagramas de flujo, manual paso a paso de la CLI y anÃ¡lisis forense.
-
-### Core Engineering Specifications (Corpus TÃ©cnico GRD / EQF 7)
-
-El proyecto cuenta con una especificaciÃ³n tÃ©cnica y pedagÃ³gica exhaustiva dividida en cuatro volÃºmenes de ingenierÃ­a (Nivel MECES 3 / EQF 7), diseÃ±ados tanto para la comprensiÃ³n profunda del algoritmo como para su despliegue seguro en entornos de producciÃ³n:
-
-| Identificador | TÃ­tulo del Documento | Enfoque TÃ©cnico y Alcance |
-| :--- | :--- | :--- |
-| [`PED-01`](docs/DOC-GRD-KITSUNE-PED-01.md) | **Manual PedagÃ³gico Interno y GuÃ­a de Taller** | DeconstrucciÃ³n paso a paso de los 6 bloques conceptuales: fÃ­sica de colas en el Edge, modelos mecÃ¡nicos de AfterImage (*O*(1)) y KitNET (*O*(*k*Â²)), calibraciÃ³n analÃ­tica log-normal y banco de preguntas de examen para Blue Teams y SOC. |
-| [`ARCH-02`](docs/DOC-GRD-KITSUNE-ARCH-02.md) | **EspecificaciÃ³n Formal de Arquitectura y DiseÃ±o** | FormulaciÃ³n matemÃ¡tica rigurosa: tuplas estadÃ­sticas continuas $IS_{i,\lambda}$, decaimiento exponencial $d_\lambda(t) = 2^{-\lambda \Delta t}$, clustering incremental `corClust`, demostraciÃ³n de reducciÃ³n cuadrÃ¡tica y contratos de interfaz en Python 3.11. |
-| [`BENCH-03`](docs/DOC-GRD-KITSUNE-BENCH-03.md) | **Informe Forense Experimental y Benchmarks** | ValidaciÃ³n empÃ­rica (NDSS 2018 Sec. V): anÃ¡lisis forense de los 9 vectores hostiles (Mirai Botnet y sondeo sigiloso Nmap), matriz comparativa frente a Suricata / Isolation Forest / GMM, y mÃ©tricas de latencia determinista en SoCs embebidos (Raspberry Pi 3B). |
-| [`PROD-04`](docs/DOC-GRD-KITSUNE-PROD-04.md) | **GuÃ­a de Despliegue en ProducciÃ³n y Gobernanza BCP** | Patrones de ingesta pasiva fuera de banda (*Out-of-Band* vÃ­a SPAN, TAP fÃ­sico y VPC Traffic Mirroring), integraciÃ³n SIEM mediante formato CEF/JSON, protocolo de mitigaciÃ³n de envenenamiento de lÃ­nea base (*baseline poisoning*) y plantillas de servicio para `systemd` y Docker. |
-
-> **Note:** *The core engineering specifications (`PED-01` to `PROD-04`) are currently authored in formal technical Spanish as part of the system's technological risk governance and architectural audit baseline (EQF Level 7 research framework). English versions are scheduled for upcoming roadmap releases.*
 ---
 
-## Quickstart
-
-### 1. Installation
+## Quickstart & Installation
 
 Clone the repository and install in editable mode:
 
@@ -145,23 +88,12 @@ pip install --upgrade pip
 pip install -e .
 ```
 
-Verify that the CLI is accessible:
+Verify environmental and CLI integrity:
 
 ```bash
+pytest -v tests/
 kitsune --help
 ```
-
-### 2. Run the Built-in Demo
-
-Execute the streaming detection pipeline on the bundled Mirai botnet trace (15,000 packets):
-
-```bash
-kitsune demo --limit 15000
-```
-
-The CLI runs AfterImage feature extraction, passes the stream through KitNET, and exports:
-* `demo_scores.csv`: Packet-by-packet continuous RMSE anomaly scores.
-* `demo_plot.png`: Anomaly score trajectory over time with the log-normal decision boundary.
 
 ---
 
@@ -169,105 +101,65 @@ The CLI runs AfterImage feature extraction, passes the stream through KitNET, an
 
 The unified CLI provides dedicated subcommands for production analysis, demos, and benchmark evaluation:
 
-### Streaming PCAP / TSV Inspection (`kitsune run`)
+### 1. Interactive Demonstration (`kitsune demo`)
+Executes an end-to-end unsupervised pipeline over the canonical Mirai botnet evaluation capture, fits the log-normal decision boundary, and renders an anomaly score plot:
 
 ```bash
-kitsune run path/to/capture.pcap --limit 100000 --max-ae 10 --fm-grace 5000 --ad-grace 50000 --csv anomaly_scores.csv --plot anomaly_plot.png
+kitsune demo --limit 25000 --plot --plot-path docs/demo_plot.png
+```
+
+### 2. High-Throughput Stream Processing (`kitsune run`)
+Ingests arbitrary network traces (PCAP, PCAPNG, or TSV) in continuous streaming mode with bounded O(1) memory:
+
+```bash
+kitsune run -i traffic.pcap -o scores.csv -f csv --fm-grace 2000 --ad-grace 5000 -m 10
 ```
 
 | Parameter | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `file` | `Path` | *Required* | Path to input `.pcap`, `.pcapng`, or `.tsv` file |
-| `--limit` | `int` | `100000` | Maximum number of packets to process |
-| `--max-ae` | `int` | `10` | Maximum input dimension ($m$) per autoencoder in $L^{(1)}$ |
-| `--fm-grace` | `int` | `5000` | Packet budget for online feature mapping (corClust) |
-| `--ad-grace` | `int` | `50000` | Packet budget for baseline autoencoder training (KitNET) |
-| `--csv` | `Path` | `anomaly_scores.csv` | Output path for continuous RMSE anomaly scores |
-| `--plot` | `Path` | `anomaly_plot.png` | Destination path for anomaly plot |
+| `-i, --input` | `Path` | *Required* | Path to input `.pcap`, `.pcapng`, or `.tsv` trace |
+| `-o, --out` | `Path` | `output_scores.csv` | Destination path for the exported anomaly score trajectory |
+| `-f, --format` | `str` | `csv` | Serialization format: `csv` or `ndjson` |
+| `-n, --limit` | `int` | `0` | Maximum packets to process (use `0` for uncapped stream) |
+| `--fm-grace` | `int` | `2000` | Packet budget for online feature mapping (`corClust`) |
+| `--ad-grace` | `int` | `5000` | Packet budget for baseline autoencoder training (`KitNET` SGD) |
+| `-m, --max-ae` | `int` | `10` | Maximum input dimension bound (m <= 10) per autoencoder |
 
-### Forensic Evaluation (`kitsune eval`)
-
-Audits continuous RMSE anomaly scores against binary ground truth labels using NDSS 2018 Section V-C metrics:
+### 3. Forensic Evaluation & Benchmarking (`kitsune eval`)
+Audits raw anomaly scores against ground truth labels following the experimental design of NDSS 2018 (Section V-C & Figure 9). The `--skip-grace` flag ensures that metrics reflect purely the steady-state execution mode (`exec-mode`), excluding the initial training transient:
 
 ```bash
-kitsune eval --scores anomaly_scores.csv --labels ground_truth.csv
+kitsune eval -s scores.csv -l labels.csv -g 2000 -j docs/forensic_report_canonical.json
 ```
 
-Example CLI report:
-```text
-==============================================================
- KITSUNE NIDS: FORENSIC EVALUATION REPORT (NDSS 2018 Sec. V-C)
-==============================================================
- Total evaluated packets : 120,000
- Benign baseline (0)     : 112,418
- Malicious instances (1) : 7,582
---------------------------------------------------------------
- ROC Area Under Curve (AUC)     : 0.9998
- Equal Error Rate (EER)         : 0.0032 (at tau = 0.4812)
- True Positive Rate (FPR<=0.001): 99.72% (at tau = 0.6102)
- False Negative Rate (FNR)      : 0.28%
-==============================================================
-```
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `-s, --scores` | `Path` | *Required* | Path to anomaly scores file (CSV with `rmse` column or raw values) |
+| `-l, --labels` | `Path` | *Required* | Path to ground truth binary labels file (`0` benign, `1` anomaly) |
+| `-g, --skip-grace` | `int` | `2000` | Packets to exclude from evaluation (FM_grace + AD_grace) |
+| `-j, --json` | `Path` | `None` | Optional destination path to export structured JSON metrics |
 
 ---
 
-## Empirical Benchmark: Mirai Botnet Detection
+## Empirical Benchmark: Mirai Botnet Detection (NDSS 2018 Sec. V-C)
 
-Analysis of the streaming RMSE output on the benchmark trace demonstrates high signal separation between benign baseline traffic and malicious Mirai botnet activity.
+Evaluated against the **Mirai Botnet** IoT evaluation trace (764,137 packets, 118.9 minutes duration) recorded from an operational IP camera surveillance network.
 
-### Extended Execution (120,000 Packets - Semilogarithmic Scale)
-
-![KitNET Anomaly Detection - Mirai Dataset (Escala LogarÃ­tmica)](mirai_rmse_log_plot.png)
-
-### Forensic Phase Analysis
-
-* **Packets 0 - 2,000 (Feature Mapping Phase):** Model grace period (`--fm-grace 2000`). AfterImage initializes damped statistics and corClust discovers correlation groupings. Anomaly score remains strictly 0.0.
-* **Packets 2,001 - 3,000 (Autoencoder Convergence Transient):** Online SGD initial weight optimization across $L^{(1)}$ and $L^{(2)}$. The isolated spike at Packet #2543 ($RMSE = 600.74$) is a numerical convergence artifact occurring before the autoencoders settle into the benign traffic manifold. Handled analytically by our log-normal dynamic thresholding engine.
-* **Packets 3,001 - 7,000 (Benign Baseline Manifold):** Stabilized normal traffic profile. The reconstruction error remains bounded with a median of **0.1297** and a 99th percentile ($p99$) of **0.4155**.
-* **Packets 7,001 - 120,000 (Mirai Botnet Intrusion & Infiltration):** Active distributed scanning and Telnet propagation phase. The sustained intrusion triggers widespread subspace reconstruction breakdown, peaking at Packet #12,322 ($RMSE = 11.2944$) and reaching severe bursts exceeding $10^3 - 10^4$ RMSE. Notice the exponential decay slopes ($d_\lambda(t) = 2^{-\lambda t}$) following each attack wave as AfterImage dampens past activity.
-
-### Quantitative Performance Metrics
-
-| Metric | Score | NDSS 2018 Target Constraint |
+| Benchmark Metric | NDSS 2018 Criterion | Empirical Result |
 | :--- | :--- | :--- |
-| **ROC AUC** | **0.9998** | Threshold-independent discriminative power |
-| **TPR @ FPR $\le 0.001$** | **99.72%** | Quantitative risk tolerance ($\le 1$ FP per 1,000 packets) |
-| **False Negative Rate (FNR)** | **0.28%** | Minimized operational blind spots |
-| **Equal Error Rate (EER)** | **0.0032** | Optimal symmetric decision boundary |
-| **Signal-to-Noise Ratio (vs $p99$)** | **27.18x** | Reconstruction error separation above noise floor |
-| **Signal-to-Noise Ratio (vs Median)**| **87.09x** | Separation against median baseline |
-| **Processing Latency** | **$O(1)$ Streaming** | Single CPU core, zero cloud telemetry |
+| **Total Packets Evaluated** | Stream Length (Exec-mode) | 118,000 |
+| **Class Distribution** | Positives / Negatives | 10,555 (1) / 107,445 (0) |
+| **Area Under Curve (AUC)** | Overall Ranking Quality (Higher is better) | **0.8614** |
+| **Equal Error Rate (EER)** | Equilibrium where FPR == FNR (Lower is better) | **0.2067** (at tau = 0.3040) |
+| **Operating Threshold** | Calibrated at FPR <= 0.001 | tau = 0.5113 |
+| **Streaming Throughput** | Single Logical Core (Windows 11 / Py 3.11) | 370 - 500 pkts/s |
 
----
+> **Forensic Audit Trace:** The machine-readable evaluation report is tracked in [`docs/forensic_report_canonical.json`](docs/forensic_report_canonical.json).
 
-## Empirical Benchmark: Stealth Reconnaissance (Nmap OS Fingerprinting)
-
-Beyond volumetric botnet floods, Kitsune detects stealthy low-rate reconnaissance probes where individual packet contents appear benign but protocol-level inter-arrival timings and cross-channel correlations break down.
-
-### Micro-Benchmark Execution (2,233 Packets - Synthetic OS Scan)
-
-![KitNET Anomaly Detection - OS Scan Trace](docs/os_scan_plot.png)
-
-```bash
-# Generate the synthetic trace (1,500 benign RTP packets + 400 Nmap probes)
-python tests/generate_os_scan_trace.py
-
-# Execute detection pipeline with online feature mapping and training
-python cli.py run data/samples/os_scan_micro.pcap --fm-grace 500 --ad-grace 1000 --plot docs/os_scan_plot.png
-```
-
-### Forensic Breakdown (NDSS 2018 Table III)
-* **Packets 0 - 500 (Feature Mapping Phase):** AfterImage builds the correlation distance matrix $D_{i,j}$ over continuous RTP/UDP media streams, discovering a topology of **100 features** (excluding channel jitter for optimized throughput) mapped into an autoencoder ensemble bounded by $m \le 10$.
-* **Packets 501 - 1,000 (Benign Manifold Calibration):** Unsupervised SGD parameter tuning across $L^{(1)}$ and $L^{(2)}$ on clean conversational traffic. RMSE scores remain tightly bounded at the noise floor.
-* **Packets 1,001 - 2,233 (Nmap OS Fingerprinting Burst):** Active injection of TCP SYN, NULL, Xmas, and unsolicited RST/ACK response packets. The sudden distortion of channel jitter ($\sigma_i$) and directional packet size covariances ($Cov_{S_i, S_j}$) triggers a sharp, sustained RMSE spike well above the log-normal decision boundary ($\tau$).
-
----
-
-## Quantitative Risk & Decision Alignment (GRD / BCP)
-
-The mathematical formulation of Kitsune maps directly to enterprise risk appetite and operational resilience frameworks:
-* **Risk Tolerance Parameter ($k$):** In the threshold formula $\tau = \exp(\mu_{\log} + k \cdot \sigma_{\log})$, $k$ is the quantitative translation of organizational risk tolerance. Setting $k = 3.0902$ bounds false alarm probability to strictly $FPR \le 10^{-3}$, preventing SOC alert fatigue while ensuring $99.72\%$ intrusion capture.
-* **Continuity & Fail-Safe Operation (BCP/DRP):** Constant $O(1)$ processing time and bounded memory usage ensure monitoring continuity at network boundaries without causing packet loss, queue accumulation, or egress telemetry dependencies.
+### Forensic Phase Analysis & Kinematics
+* **Temporal Transition Boundary (t = 52.00 min):** Conforme a la Tabla III de NDSS 2018, los primeros 52 minutos constituyen el tr¨¢fico benigno de reposo de los 9 dispositivos IoT. Dicho instante temporal se cruza de manera determinista en el **paquete 85.381**.
+* **Aislamiento de la M¨¢quina Infectada (`192.168.2.108`):** Durante el ataque activo, los 8 dispositivos restantes mantienen comunicaciones leg¨ªtimas concurrentes. Al aislar los flujos de la c¨¢mara infectada, el AUC escala de forma rigurosa al **0.8614**, con un equilibrio EER ¨®ptimo en tau = 0.3040.
+* **Alineaci¨®n con la Figura 9 de NDSS 2018:** Con m = 10, Kitsune reporta en el paper una tasa TPR @ FPR=0 = 9.4 x 10^-5 sobre la captura de Mirai. En una ventana acotada de 10.555 paquetes de escaneo temprano, dicha probabilidad representa menos de 1 detecci¨®n, coincidiendo con el 0.00% emp¨ªrico observado al fijar falso alarme cero absoluto.
 
 ---
 
@@ -279,7 +171,7 @@ The automated test suite covers incremental statistics, correlation clustering, 
 pytest tests/ -v --cov=.
 ```
 
-All pull requests and commits to `main` must pass the matrix CI workflow:
+All pull requests and commits to `main` must pass the multi-platform matrix CI workflow (`.github/workflows/ci.yml`):
 * **Operating Systems:** Ubuntu Latest, Windows Latest.
 * **Python Runtimes:** 3.9, 3.10, 3.11.
 
@@ -292,13 +184,13 @@ All pull requests and commits to `main` must pass the matrix CI workflow:
 
 ---
 
-## ðŸ“© Contact & Research Inquiries
+## Contact & Research Inquiries
 
 This project is maintained under the **Kitsune Research Group** umbrella. For academic inquiries, architectural discussions, or enterprise deployments, please use the official channels:
 
 * **Bug Reports & Code Architecture:** Open a formal [GitHub Issue](https://github.com/kitsune-research/Kitsune-py/issues).
 * **Feature Requests & Q&A:** Utilize the [GitHub Discussions](https://github.com/kitsune-research/Kitsune-py/discussions) board.
-* **Professional Network:** Connect with the maintainer on [LinkedIn](https://linkedin.com/in/davidsorianosanchez76a2461b7) (mention *Kitsune-py* in your connection request to bypass automated filters).
+* **Professional Network:** Connect with the maintainer on [LinkedIn](https://linkedin.com/in/davidsorianosanchez76a2461b7).
 
 ---
 
