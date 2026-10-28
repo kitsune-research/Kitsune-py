@@ -7,7 +7,6 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
-# Cancela ejecuciones redundantes en la misma rama ante commits sucesivos
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -19,7 +18,7 @@ jobs:
   test:
     name: test (${{ matrix.os }}, py${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 10  # Previene procesos zombi en sockets o streams
+    timeout-minutes: 10
 
     strategy:
       fail-fast: false
@@ -50,8 +49,15 @@ jobs:
           pip install --no-input -e .
           pip install --no-input pytest pytest-cov
 
+      - name: Add Python Scripts directory to PATH
+        shell: bash
+        run: |
+          SCRIPTS_PATH=$(python -c "import sysconfig; print(sysconfig.get_path('scripts'))")
+          echo "$SCRIPTS_PATH" >> $GITHUB_PATH
+
       - name: Verify CLI Entry Points
         run: |
+          python -c "import cli; print('CLI module successfully imported')"
           kitsune --help
           kitsune eval --help
 
