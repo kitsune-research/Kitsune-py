@@ -59,11 +59,10 @@ Engineers comparing this implementation against the foundational NDSS 2018 paper
 * [Memorando Técnico: Arquitectura del Motor v0.4.0 (docs/TECH_MEMO_v0.4.0_ARCHITECTURE_ES.md)](docs/TECH_MEMO_v0.4.0_ARCHITECTURE_ES.md): Especificación canónica en español con deducciones matemáticas íntegras y mecanismos de defensa frente a saturación de estado.
 
 ### Core Engineering Specifications (Corpus Técnico GRD / EQF 7)
-* [`PED-01`: Manual Pedagógico Interno y Guía de Taller](docs/DOC-GRD-KITSUNE-PED-01.md): Deconstrucción de física de colas en el Edge, modelos mecánicos de AfterImage ($\mathcal{O}(1)$) y KitNET ($\mathcal{O}(k^2)$), calibración analítica log-normal y banco de evaluación para Blue Teams y SOC.
-* [`ARCH-02`: Especificación Formal de Arquitectura y Diseño](docs/DOC-GRD-KITSUNE-ARCH-02.md): Formulación matemática de tuplas estadísticas continuas, decaimiento exponencial $d_\lambda(t) = 2^{-\lambda \cdot \Delta t}$, clustering incremental corClust y reducción cuadrática.
+* [`PED-01`: Manual Pedagógico Interno y Guía de Taller](docs/DOC-GRD-KITSUNE-PED-01.md): Deconstrucción de física de colas en el Edge, modelos mecánicos de AfterImage (O(1)) y KitNET (O(k²)), calibración analítica log-normal y banco de evaluación para Blue Teams y SOC.
+* [`ARCH-02`: Especificación Formal de Arquitectura y Diseño](docs/DOC-GRD-KITSUNE-ARCH-02.md): Formulación matemática de tuplas estadísticas continuas, decaimiento exponencial d_lambda(t) = 2^(-lambda * dt), clustering incremental corClust y reducción cuadrática.
 * [`BENCH-03`: Informe Forense Experimental y Benchmarks](docs/DOC-GRD-KITSUNE-BENCH-03.md): Validación empírica (NDSS 2018 Sec. V): análisis forense de vectores hostiles (Mirai Botnet y escaneo Nmap), comparativa frente a Suricata / Isolation Forest / GMM y latencia determinista.
 * [`PROD-04`: Guía de Despliegue en Producción y Gobernanza BCP](docs/DOC-GRD-KITSUNE-PROD-04.md): Patrones de ingesta pasiva fuera de banda (SPAN, TAP físico y VPC Mirroring), integración SIEM en formato CEF/JSON, mitigación de baseline poisoning y plantillas de servicio.
-
 ---
 
 ## Quickstart & Installation
