@@ -65,3 +65,4 @@ demo_scores.csv
 *.zip
 *.json
 !docs/*.json
+mirai_labels.csv
