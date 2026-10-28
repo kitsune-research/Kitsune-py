@@ -50,6 +50,11 @@ jobs:
           pip install --no-input -e .
           pip install --no-input pytest pytest-cov
 
+      - name: Verify CLI Entry Points
+        run: |
+          kitsune --help
+          kitsune eval --help
+
       - name: Run deterministic test suite
         run: |
           pytest tests/ -v --cov=KitNET --cov=AfterImage --cov-report=term-missing
