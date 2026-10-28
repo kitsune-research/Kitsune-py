@@ -57,3 +57,11 @@ kitsune_project_briefing.txt
 # Ephemeral demo & test outputs
 demo_scores.csv
 
+# Salidas de telemetría y puntuaciones temporales
+*.csv
+!mirai_labels.csv
+*.tsv
+*.pcap
+*.zip
+*.json
+!docs/*.json
