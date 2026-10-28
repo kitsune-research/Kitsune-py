@@ -1,0 +1,16 @@
+{
+  "n_packets": 118000,
+  "n_pos": 10555,
+  "n_neg": 107445,
+  "auc": 0.861444590899172,
+  "eer": 0.20673250053198317,
+  "eer_threshold": 0.303983,
+  "tpr_at_fpr_0": 0.0,
+  "fnr_at_fpr_0": 1.0,
+  "thresh_at_fpr_0": 0.959538,
+  "tp_at_fpr_0": 0,
+  "tpr_at_fpr_001": 0.0,
+  "fnr_at_fpr_001": 1.0,
+  "thresh_at_fpr_001": 0.511346,
+  "tp_at_fpr_001": 0
+}
