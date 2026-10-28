@@ -46,8 +46,8 @@ Kitsune processes unlabelled packet streams in constant time and memory O(1) thr
 ### Architectural Note: Feature Space Dimensionality (115 vs. 100)
 
 Engineers comparing this implementation against the foundational NDSS 2018 paper may notice a deliberate divergence in feature dimensionality:
-* **The Theoretical Formulation (R11?):** The paper (Table II) defines 115 features by extracting 23 statistical metrics across 5 damped time windows.
-* **The Implementation Reality (R¹⁰⁰):** This production repository operates strictly in a 100-dimensional continuous space (20 metrics x 5 windows).
+* **The Theoretical Formulation (R^115):** The paper (Table II) defines 115 features by extracting 23 statistical metrics across 5 damped time windows.
+* **The Implementation Reality (R^100):** This production repository operates strictly in a 100-dimensional continuous space (20 metrics x 5 windows).
 * **The Rationale:** The 15 omitted features correspond to channel jitter (inter-packet delay) statistics. Bypassing them in the continuous streaming loop avoids redundant timestamp diffing and optimizes packet ingestion throughput while preserving full anomaly detection fidelity.
 
 ---
@@ -158,7 +158,7 @@ Evaluated against the **Mirai Botnet** IoT evaluation trace (764,137 packets, 11
 ### Forensic Phase Analysis & Kinematics
 * **Temporal Transition Boundary (t = 52.00 min):** Conforme a la Tabla III de NDSS 2018, los primeros 52 minutos constituyen el tr¨¢fico benigno de reposo de los 9 dispositivos IoT. Dicho instante temporal se cruza de manera determinista en el **paquete 85.381**.
 * **Aislamiento de la M¨¢quina Infectada (`192.168.2.108`):** Durante el ataque activo, los 8 dispositivos restantes mantienen comunicaciones leg¨ªtimas concurrentes. Al aislar los flujos de la c¨¢mara infectada, el AUC escala de forma rigurosa al **0.8614**, con un equilibrio EER ¨®ptimo en tau = 0.3040.
-* **Alineaci¨®n con la Figura 9 de NDSS 2018:** Con m = 10, Kitsune reporta en el paper una tasa TPR @ FPR=0 = 9.4 x 10^-5 sobre la captura de Mirai. En una ventana acotada de 10.555 paquetes de escaneo temprano, dicha probabilidad representa menos de 1 detecci¨®n, coincidiendo con el 0.00% emp¨ªrico observado al fijar falso alarme cero absoluto.
+* **Alineaci¨®n con la Figura 9 de NDSS 2018:** Con m = 10, Kitsune reporta en el paper una tasa TPR @ FPR=0 = 9.4 x 10^-5 sobre la captura de Mirai. En una ventana acotada de 10.555 paquetes de escaneo temprano, dicha probabilidad representa menos de 1 detecci¨®n, coincidiendo con el 0.00% emp¨ªrico observado al fijar falsa alarma cero absoluto.
 
 ---
 
