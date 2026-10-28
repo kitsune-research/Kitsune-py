@@ -84,7 +84,10 @@ class dA:
         self.norm_min[x < self.norm_min] = x[x < self.norm_min]
 
         # 0-1 normalize
-        x = (x - self.norm_min) / (self.norm_max - self.norm_min + 0.0000000000000001)
+        denom = self.norm_max - self.norm_min
+        denom[denom == 0] = 1e-16
+        x = (x - self.norm_min) / denom
+        x = numpy.clip(x, 0.0, 1.0)
 
         if self.params.corruption_level > 0.0:
             tilde_x = self.get_corrupted_input(x, self.params.corruption_level)
@@ -115,8 +118,15 @@ class dA:
         if self.n < self.params.gracePeriod:
             return 0.0
         else:
-            # 0-1 normalize
-            x = (x - self.norm_min) / (self.norm_max - self.norm_min + 0.0000000000000001)
+            # 0-1 normalize with epsilon stability
+            denom = self.norm_max - self.norm_min
+            denom[denom == 0] = 1e-16
+            x = (x - self.norm_min) / denom
+            
+            # DEFENSIVE CLIPPING: Prevent mathematical explosion on unseen bursts
+            # Permite reflejar la anomalía sin destruir la escala sigmoidal (acotado a [ -1.0, 2.0 ])
+            x = numpy.clip(x, -1.0, 2.0)
+            
             z = self.reconstruct(x)
             rmse = numpy.sqrt(((x - z) ** 2).mean()) #MSE
             return rmse
