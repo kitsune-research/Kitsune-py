@@ -1,4 +1,4 @@
-# Kitsune NIDS (v0.3.1)
+# Kitsune NIDS (v0.4.0)
 ### Unsupervised Online Network Intrusion Detection via Ensembles of Autoencoders
 
 [![CI Pipeline](https://github.com/kitsune-research/Kitsune-py/actions/workflows/ci.yml/badge.svg)](https://github.com/kitsune-research/Kitsune-py/actions)
@@ -7,7 +7,7 @@
 [![Paper: NDSS 2018](https://img.shields.io/badge/Paper-NDSS%202018-red.svg)](https://doi.org/10.14722/ndss.2018.23204)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-*Plug-and-play network anomaly detector executing incremental feature extraction in O(1) and ensemble inference bounded by O(k2).*
+*Plug-and-play network anomaly detector executing incremental feature extraction in O(1) and ensemble inference bounded by O(k²).*
 
 ---
 
@@ -47,19 +47,19 @@ Kitsune processes unlabelled packet streams in constant time and memory O(1) thr
 
 Engineers comparing this implementation against the foundational NDSS 2018 paper may notice a deliberate divergence in feature dimensionality:
 * **The Theoretical Formulation (R11?):** The paper (Table II) defines 115 features by extracting 23 statistical metrics across 5 damped time windows.
-* **The Implementation Reality (R1??):** This production repository operates strictly in a 100-dimensional continuous space (20 metrics x 5 windows).
+* **The Implementation Reality (R¹⁰⁰):** This production repository operates strictly in a 100-dimensional continuous space (20 metrics x 5 windows).
 * **The Rationale:** The 15 omitted features correspond to channel jitter (inter-packet delay) statistics. Bypassing them in the continuous streaming loop avoids redundant timestamp diffing and optimizes packet ingestion throughput while preserving full anomaly detection fidelity.
 
 ---
 
 ## Documentation & Architecture Guides
 
-### Canonical Release Specifications (v0.3.1 Engineering Baseline)
-* [Technical Memorandum: Engine Architecture v0.3.1 (docs/TECH_MEMO_v0.3.1_ARCHITECTURE.md)](docs/TECH_MEMO_v0.3.1_ARCHITECTURE.md): Canonical memorandum formalizing AfterImage O(1) damped moments, R1?? topology, KitNET agglomerative clustering (m <= 10), O(k2) asymptotic complexity proof, and state-exhaustion pruning.
-* [Memorando T¨¦cnico: Arquitectura del Motor v0.3.1 (docs/TECH_MEMO_v0.3.1_ARCHITECTURE_ES.md)](docs/TECH_MEMO_v0.3.1_ARCHITECTURE_ES.md): Especificación can¨®nica en espa?ol con deducciones matemáticas ¨ªntegras y mecanismos de defensa frente a saturaci¨®n de estado.
+### Canonical Release Specifications (v0.4.0 Engineering Baseline)
+* [Technical Memorandum: Engine Architecture v0.4.0 (docs/TECH_MEMO_v0.4.0_ARCHITECTURE.md)](docs/TECH_MEMO_v0.4.0_ARCHITECTURE.md): Canonical memorandum formalizing AfterImage O(1) damped moments, R¹⁰⁰ topology, KitNET agglomerative clustering (m <= 10), O(k²) asymptotic complexity proof, and state-exhaustion pruning.
+* [Memorando Técnico: Arquitectura del Motor v0.4.0 (docs/TECH_MEMO_v0.4.0_ARCHITECTURE_ES.md)](docs/TECH_MEMO_v0.4.0_ARCHITECTURE_ES.md): Especificación canónica en español con deducciones matemáticas íntegras y mecanismos de defensa frente a saturación de estado.
 
 ### Core Engineering Specifications (Corpus Técnico GRD / EQF 7)
-* `PED-01`: Manual Pedagógico Interno y Guía de Taller (docs/DOC-GRD-KITSUNE-PED-01.md): Deconstrucción de física de colas en el Edge, modelos mecánicos de AfterImage (O(1)) y KitNET (O(k2)), calibración anal¨ªtica log-normal y banco de evaluación para Blue Teams y SOC.
+* `PED-01`: Manual Pedagógico Interno y Guía de Taller (docs/DOC-GRD-KITSUNE-PED-01.md): Deconstrucción de física de colas en el Edge, modelos mecánicos de AfterImage (O(1)) y KitNET (O(k²)), calibración anal¨ªtica log-normal y banco de evaluación para Blue Teams y SOC.
 * `ARCH-02`: Especificación Formal de Arquitectura y Diseño (docs/DOC-GRD-KITSUNE-ARCH-02.md): Formulación matemática de tuplas estadísticas continuas, decaimiento exponencial d_lambda(t) = 2^(-lambda * dt), clustering incremental corClust y reducción cuadrática.
 * `BENCH-03`: Informe Forense Experimental y Benchmarks (docs/DOC-GRD-KITSUNE-BENCH-03.md): Validación empírica (NDSS 2018 Sec. V): análisis forense de vectores hostiles (Mirai Botnet y escaneo Nmap), comparativa frente a Suricata / Isolation Forest / GMM y latencia determinista.
 * `PROD-04`: Guía de Despliegue en Producción y Gobernanza BCP (docs/DOC-GRD-KITSUNE-PROD-04.md): Patrones de ingesta pasiva fuera de banda (SPAN, TAP físico y VPC Mirroring), integración SIEM en formato CEF/JSON, mitigación de baseline poisoning y plantillas de servicio.
