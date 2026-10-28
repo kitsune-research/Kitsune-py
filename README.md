@@ -56,13 +56,13 @@ Engineers comparing this implementation against the foundational NDSS 2018 paper
 
 ### Canonical Release Specifications (v0.3.1 Engineering Baseline)
 * [Technical Memorandum: Engine Architecture v0.3.1 (docs/TECH_MEMO_v0.3.1_ARCHITECTURE.md)](docs/TECH_MEMO_v0.3.1_ARCHITECTURE.md): Canonical memorandum formalizing AfterImage O(1) damped moments, R1?? topology, KitNET agglomerative clustering (m <= 10), O(k2) asymptotic complexity proof, and state-exhaustion pruning.
-* [Memorando T¨¦cnico: Arquitectura del Motor v0.3.1 (docs/TECH_MEMO_v0.3.1_ARCHITECTURE_ES.md)](docs/TECH_MEMO_v0.3.1_ARCHITECTURE_ES.md): Especificaci¨®n can¨®nica en espa?ol con deducciones matem¨¢ticas ¨ªntegras y mecanismos de defensa frente a saturaci¨®n de estado.
+* [Memorando TÂ¨Â¦cnico: Arquitectura del Motor v0.3.1 (docs/TECH_MEMO_v0.3.1_ARCHITECTURE_ES.md)](docs/TECH_MEMO_v0.3.1_ARCHITECTURE_ES.md): EspecificaciÂ¨Â®n canÂ¨Â®nica en espa?ol con deducciones matemÂ¨Â¢ticas Â¨Âªntegras y mecanismos de defensa frente a saturaciÂ¨Â®n de estado.
 
-### Core Engineering Specifications (Corpus T¨¦cnico GRD / EQF 7)
-* `PED-01`: Manual Pedag¨®gico Interno y Gu¨ªa de Taller (docs/DOC-GRD-KITSUNE-PED-01.md): Deconstrucci¨®n de f¨ªsica de colas en el Edge, modelos mec¨¢nicos de AfterImage (O(1)) y KitNET (O(k2)), calibraci¨®n anal¨ªtica log-normal y banco de evaluaci¨®n para Blue Teams y SOC.
-* `ARCH-02`: Especificaci¨®n Formal de Arquitectura y Dise?o (docs/DOC-GRD-KITSUNE-ARCH-02.md): Formulaci¨®n matem¨¢tica de tuplas estad¨ªsticas continuas, decaimiento exponencial d_lambda(t) = 2^(-lambda * dt), clustering incremental corClust y reducci¨®n cuadr¨¢tica.
-* `BENCH-03`: Informe Forense Experimental y Benchmarks (docs/DOC-GRD-KITSUNE-BENCH-03.md): Validaci¨®n emp¨ªrica (NDSS 2018 Sec. V): an¨¢lisis forense de vectores hostiles (Mirai Botnet y escaneo Nmap), comparativa frente a Suricata / Isolation Forest / GMM y latencia determinista.
-* `PROD-04`: Gu¨ªa de Despliegue en Producci¨®n y Gobernanza BCP (docs/DOC-GRD-KITSUNE-PROD-04.md): Patrones de ingesta pasiva fuera de banda (SPAN, TAP f¨ªsico y VPC Mirroring), integraci¨®n SIEM en formato CEF/JSON, mitigaci¨®n de baseline poisoning y plantillas de servicio.
+### Core Engineering Specifications (Corpus TÂ¨Â¦cnico GRD / EQF 7)
+* `PED-01`: Manual PedagÂ¨Â®gico Interno y GuÂ¨Âªa de Taller (docs/DOC-GRD-KITSUNE-PED-01.md): DeconstrucciÂ¨Â®n de fÂ¨Âªsica de colas en el Edge, modelos mecÂ¨Â¢nicos de AfterImage (O(1)) y KitNET (O(k2)), calibraciÂ¨Â®n analÂ¨Âªtica log-normal y banco de evaluaciÂ¨Â®n para Blue Teams y SOC.
+* `ARCH-02`: EspecificaciÂ¨Â®n Formal de Arquitectura y Dise?o (docs/DOC-GRD-KITSUNE-ARCH-02.md): FormulaciÂ¨Â®n matemÂ¨Â¢tica de tuplas estadÂ¨Âªsticas continuas, decaimiento exponencial d_lambda(t) = 2^(-lambda * dt), clustering incremental corClust y reducciÂ¨Â®n cuadrÂ¨Â¢tica.
+* `BENCH-03`: Informe Forense Experimental y Benchmarks (docs/DOC-GRD-KITSUNE-BENCH-03.md): ValidaciÂ¨Â®n empÂ¨Âªrica (NDSS 2018 Sec. V): anÂ¨Â¢lisis forense de vectores hostiles (Mirai Botnet y escaneo Nmap), comparativa frente a Suricata / Isolation Forest / GMM y latencia determinista.
+* `PROD-04`: GuÂ¨Âªa de Despliegue en ProducciÂ¨Â®n y Gobernanza BCP (docs/DOC-GRD-KITSUNE-PROD-04.md): Patrones de ingesta pasiva fuera de banda (SPAN, TAP fÂ¨Âªsico y VPC Mirroring), integraciÂ¨Â®n SIEM en formato CEF/JSON, mitigaciÂ¨Â®n de baseline poisoning y plantillas de servicio.
 
 ---
 
@@ -157,9 +157,9 @@ Evaluated against the **Mirai Botnet** IoT evaluation trace (764,137 packets, 11
 > **Forensic Audit Trace:** The machine-readable evaluation report is tracked in [`docs/forensic_report_canonical.json`](docs/forensic_report_canonical.json).
 
 ### Forensic Phase Analysis & Kinematics
-* **Temporal Transition Boundary (t = 52.00 min):** Conforme a la Tabla III de NDSS 2018, los primeros 52 minutos constituyen el tr¨¢fico benigno de reposo de los 9 dispositivos IoT. Dicho instante temporal se cruza de manera determinista en el **paquete 85.381**.
-* **Aislamiento de la M¨¢quina Infectada (`192.168.2.108`):** Durante el ataque activo, los 8 dispositivos restantes mantienen comunicaciones leg¨ªtimas concurrentes. Al aislar los flujos de la c¨¢mara infectada, el AUC escala de forma rigurosa al **0.8614**, con un equilibrio EER ¨®ptimo en tau = 0.3040.
-* **Alineaci¨®n con la Figura 9 de NDSS 2018:** Con m = 10, Kitsune reporta en el paper una tasa TPR @ FPR=0 = 9.4 x 10^-5 sobre la captura de Mirai. En una ventana acotada de 10.555 paquetes de escaneo temprano, dicha probabilidad representa menos de 1 detecci¨®n, coincidiendo con el 0.00% emp¨ªrico observado al fijar falso alarme cero absoluto.
+* **Temporal Transition Boundary (t = 52.00 min):** Conforme a la Tabla III de NDSS 2018, los primeros 52 minutos constituyen el trÂ¨Â¢fico benigno de reposo de los 9 dispositivos IoT. Dicho instante temporal se cruza de manera determinista en el **paquete 85.381**.
+* **Aislamiento de la MÂ¨Â¢quina Infectada (`192.168.2.108`):** Durante el ataque activo, los 8 dispositivos restantes mantienen comunicaciones legÂ¨Âªtimas concurrentes. Al aislar los flujos de la cÂ¨Â¢mara infectada, el AUC escala de forma rigurosa al **0.8614**, con un equilibrio EER Â¨Â®ptimo en tau = 0.3040.
+* **AlineaciÂ¨Â®n con la Figura 9 de NDSS 2018:** Con m = 10, Kitsune reporta en el paper una tasa TPR @ FPR=0 = 9.4 x 10^-5 sobre la captura de Mirai. En una ventana acotada de 10.555 paquetes de escaneo temprano, dicha probabilidad representa menos de 1 detecciÂ¨Â®n, coincidiendo con el 0.00% empÂ¨Âªrico observado al fijar falso alarme cero absoluto.
 
 ---
 
