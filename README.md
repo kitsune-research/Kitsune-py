@@ -152,7 +152,7 @@ Evaluated against the **Mirai Botnet** IoT evaluation trace (764,137 packets, 11
 | **Area Under Curve (AUC)** | Overall Ranking Quality (Higher is better) | **0.8614** |
 | **Equal Error Rate (EER)** | Equilibrium where FPR == FNR (Lower is better) | **0.2067** (at `tau = 0.3040`) |
 | **Operating Threshold** | Calibrated at `FPR <= 0.001` | `tau = 0.5113` |
-| **Streaming Throughput** | Single Logical Core (Windows 11 / Py 3.11) | 370 - 500 pkts/s |
+| **Streaming Throughput** | Single Logical Core (Windows 11 / Py 3.11) | **885.9 pkts/s** (25,000 pkts in 28.22s) |
 
 > **Forensic Audit Trace:** The machine-readable evaluation report is tracked in [`docs/forensic_report_canonical.json`](docs/forensic_report_canonical.json).
 
@@ -168,7 +168,7 @@ Evaluated against the **Mirai Botnet** IoT evaluation trace (764,137 packets, 11
 The automated test suite covers incremental statistics, correlation clustering, stochastic autoencoder training, log-normal calibration, memory pruning, and forensic metrics:
 
 ```bash
-pytest tests/ -v --cov=.
+pytest tests/ -v --tb=short --cov=KitNET --cov=AfterImage --cov-report=term-missing
 ```
 
 All pull requests and commits to `main` must pass the multi-platform matrix CI workflow (`.github/workflows/ci.yml`):
