@@ -58,11 +58,11 @@ jobs:
 
       - name: Verify CLI Entry Points and Engine Health
         run: |
-          python -c "import kitsune; print(f'Kitsune engine imported successfully (v{getattr(kitsune, \"__version__\", \"0.4.0\")})')"
+          python -c "import KitNET, AfterImage; print('Core algorithms KitNET and AfterImage imported successfully')"
           kitsune --help
           kitsune demo --help
           kitsune eval --help
 
       - name: Run deterministic test suite (18 Invariants)
         run: |
-          pytest tests/ -v --tb=short --cov=kitsune --cov-report=term-missing
+          pytest tests/ -v --tb=short --cov=KitNET --cov=AfterImage --cov-report=term-missing
