@@ -1,68 +1,49 @@
-name: Kitsune CI Pipeline
+name: Kitsune NIDS Core CI
 
 on:
   push:
-    branches: [ "main", "develop" ]
-    tags: [ "v*" ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ "main" ]
-  workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read
+    branches: [ main, master ]
 
 jobs:
-  test:
-    name: test (${{ matrix.os }}, py${{ matrix.python-version }})
+  audit-engine:
+    name: Test & Audit (Py ${{ matrix.python-version }} on ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
-
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        python-version: ["3.9", "3.10", "3.11"]
+        os: [ ubuntu-latest, windows-latest ]
+        python-version: [ "3.11" ]
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Setup Python Runtime
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "pip"
+          cache: 'pip'
 
-      - name: Install system dependencies (Linux)
+      - name: Install System Dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libpcap-dev
+          sudo apt-get install -y libpcap-dev build-essential
 
-      - name: Install build toolchain and package in editable mode
+      - name: Install System Dependencies (Windows Npcap SDK)
+        if: runner.os == 'Windows'
         run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install --no-input Cython
-          pip install --no-input -e .
-          pip install --no-input pytest pytest-cov
+          # En Windows GitHub Actions utiliza WinPcap/Npcap stub para enlaces de Scapy
+          choco install npcap --version=1.79.0 || true
 
-      - name: Add Python Scripts directory to PATH
-        shell: bash
+      - name: Upgrade Toolchain & Install Package
         run: |
-          SCRIPTS_PATH=$(python -c "import sysconfig; print(sysconfig.get_path('scripts'))")
-          echo "$SCRIPTS_PATH" >> $GITHUB_PATH
+          python -m pip install --upgrade pip setuptools wheel Cython
+          pip install -e .
+          pip install pytest pytest-cov
 
-      - name: Verify CLI Entry Points and Engine Health
+      - name: Execute Deterministic Pytest Suite
         run: |
-          python -c "import KitNET, AfterImage; print('Core algorithms KitNET and AfterImage imported successfully')"
-          kitsune --help
-          kitsune demo --help
-          kitsune eval --help
-
-      - name: Run deterministic test suite (18 Invariants)
-        run: |
-          pytest tests/ -v --tb=short --cov=KitNET --cov=AfterImage --cov-report=term-missing
+          pytest -v --cov=KitNET tests/

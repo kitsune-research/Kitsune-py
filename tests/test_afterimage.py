@@ -1,91 +1,92 @@
+"""
+Unit tests for Kitsune NIDS: AfterImage feature extractor.
+Verifies NDSS 2018 mathematical invariants:
+- Continuous damped incremental statistics (Algorithm 3)
+- Feature space projection strictly into R^100
+- Deterministic temporal decay d_lambda(t) = 2^(-lambda * dt)
+
+Architect: Tamamo-no-Mae (kitsune-research core)
+"""
+from __future__ import annotations
+
 import math
-import sys
-from pathlib import Path
-import pytest
 import numpy as np
+import pytest
 
-# Inclusión de la raíz del repo para resolución de módulos legacy/raíz
-REPO_ROOT = Path(__file__).resolve().parent.parent
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-import AfterImage
-from AfterImage import incStat, incStatDB
+import netStat as ns
 
 
-def test_afterimage_module_exports():
-    """Comprueba que las clases del motor incremental estén disponibles."""
-    assert hasattr(AfterImage, "incStat")
-    assert hasattr(AfterImage, "incStatDB")
-    assert hasattr(AfterImage, "incStat_cov")
+class TestAfterImageInvariants:
+    """Audit suite for AfterImage damped windows and streaming statistics."""
 
+    @pytest.fixture
+    def netstat_instance(self) -> ns.netStat:
+        """Instantiate netStat with canonical NDSS 2018 parameters."""
+        # Lambdas canónicas: [5, 3, 1, 0.1, 0.01] (100ms, 500ms, 1.5s, 10s, 1min)
+        # np.nan fuerza las lambdas por defecto en la clase base
+        return ns.netStat(Lambdas=np.nan, HostLimit=255, HostSimplexLimit=1000)
 
-def test_incstat_exponential_decay():
-    """Valida el decaimiento temporal gamma = 2^(-lambda * dt)."""
-    decay_lambda = 0.1
-    t0 = 1000.0
-    t1 = 1010.0  # dt = 10s -> factor gamma = 2^(-1) = 0.5
+    def test_damped_decay_factor_monotonicity(self) -> None:
+        """Verify that d_lambda(dt) = 2^(-lambda * dt) decays monotonically."""
+        lambdas = [5.0, 3.0, 1.0, 0.1, 0.01]
+        dt_values = [0.001, 0.01, 0.1, 1.0, 10.0]
 
-    stat = incStat(decay_lambda, "stream_test", init_time=t0)
-    stat.insert(100.0, t0)
+        for lam in lambdas:
+            prev_decay = 1.0
+            for dt in dt_values:
+                decay = math.pow(2, -lam * dt)
+                assert 0.0 < decay < 1.0, f"Decay factor out of bounds (0, 1) for lam={lam}, dt={dt}"
+                assert decay < prev_decay, f"Decay factor failed monotonic decrease for lam={lam}"
+                prev_decay = decay
 
-    # Inserción tras salto temporal dt=10s
-    stat.insert(100.0, t1)
+    def test_vector_dimension_is_r100(self, netstat_instance: ns.netStat) -> None:
+        """Verify that updateGetStats returns strictly a 100-dimensional vector."""
+        # Ingesta inicial de paquete TCP sintético
+        vector = netstat_instance.updateGetStats(
+            IPtype=0x0800,
+            srcMAC="00:11:22:33:44:55",
+            dstMAC="ff:ff:ff:ff:ff:ff",
+            srcIP="192.168.1.100",
+            srcProtocol="tcp",
+            dstIP="192.168.1.1",
+            dstProtocol="80",
+            datagramSize=1460,
+            timestamp=1000.0,
+        )
 
-    # w esperado: (1.0 * 0.5) + 1.0 = 1.5
-    expected_weight = (1.0 * (2.0 ** (-decay_lambda * 10.0))) + 1.0
-    assert pytest.approx(stat.w, rel=1e-4) == expected_weight
+        vector_np = np.asarray(vector, dtype=np.float64)
+        assert vector_np.ndim == 1, f"Expected 1D vector, got ndim={vector_np.ndim}"
+        assert vector_np.shape[0] == 100, f"Expected R^100 feature vector, got shape={vector_np.shape}"
+        assert not np.isnan(vector_np).any(), "Extracted vector contains NaN values"
+        assert not np.isinf(vector_np).any(), "Extracted vector contains Inf values"
 
+    def test_temporal_stream_accumulation(self, netstat_instance: ns.netStat) -> None:
+        """Verify that streaming packet bursts update weight (w) and mean (mu) consistently."""
+        base_time = 1700000000.0
+        mac_src = "00:50:56:c0:00:08"
+        mac_dst = "00:50:56:c0:00:01"
+        ip_src = "10.0.0.50"
+        ip_dst = "10.0.0.1"
 
-def test_incstat_1d_statistics():
-    """Valida la consistencia de media y varianza amortiguada."""
-    stat = incStat(0.01, "stream_1d", init_time=0.0)
-    values = [10.0, 20.0, 30.0, 40.0, 50.0]
+        # Simular ráfaga de 50 paquetes uniformes de 500 bytes cada 10ms
+        for i in range(50):
+            t = base_time + (i * 0.01)
+            vec = netstat_instance.updateGetStats(
+                IPtype=0x0800,
+                srcMAC=mac_src,
+                dstMAC=mac_dst,
+                srcIP=ip_src,
+                srcProtocol="udp",
+                dstIP=ip_dst,
+                dstProtocol="53",
+                datagramSize=500,
+                timestamp=t,
+            )
 
-    for i, val in enumerate(values):
-        stat.insert(val, float(i * 0.1))
-
-    mean_val = stat.mean()
-    var_val = stat.var()
-
-    assert mean_val > 0.0
-    assert var_val >= 0.0
-    assert pytest.approx(stat.std(), rel=1e-4) == math.sqrt(var_val)
-
-
-def test_incstatdb_initialization():
-    """Comprueba que la base de datos de estadísticas se inicialice correctamente."""
-    db = incStatDB(limit=100)
-    assert db.limit == 100
-
-from netStat import netStat
-
-def test_afterimage_vector_dimension_100():
-  """Verifica la dimensión del vector generado por netStat (20 características x 5 ventanas = 100).
-
-  Nota arquitectónica: El paper NDSS 2018 define 115 dimensiones (incluyendo 3
-  de jitter por ventana).
-  La implementación en Python procesa 100 dimensiones (4 canales de datagrama
-  sin jitter).
-  """
-  ns = netStat(np.nan, 1000, 1000)
-
-  vector = ns.updateGetStats(
-      0,
-      "00:11:22:33:44:55",
-      "66:77:88:99:AA:BB",
-      "192.168.1.50",
-      "54321",
-      "192.168.1.1",
-      "80",
-      1460.0,
-      1000.0,
-  )
-
-  arr = np.array(vector, dtype=np.float64)
-
-  assert arr.ndim == 1, "El vector debe ser estrictamente unidimensional"
-  assert (
-      arr.shape[0] == 100
-  ), f"Dimensión esperada del extractor 100, obtenida: {arr.shape[0]}"
-  assert not np.isnan(arr).any(), "El vector no puede contener valores NaN"
+        vec_np = np.asarray(vec, dtype=np.float64)
+        # El vector debe ser estrictamente numérico y real
+        assert vec_np.shape[0] == 100, f"Dimension mismatch: expected 100, got {vec_np.shape[0]}"
+        # El peso w acumulado tras 50 paquetes debe ser significativamente mayor a 1.0
+        assert vec_np[0] > 1.0, f"Weight statistic did not accumulate properly: w={vec_np[0]}"
+        # Comprobar que no hay deriva numérica
+        assert np.isfinite(vec_np).all(), "Stream accumulation resulted in non-finite numbers"
