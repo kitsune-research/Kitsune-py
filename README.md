@@ -1,8 +1,8 @@
 # Kitsune NIDS (v0.4.0)
 ### Unsupervised Online Network Intrusion Detection via Ensembles of Autoencoders
 
-[![CI Pipeline](https://github.com/kitsune-research/Kitsune-py/actions/workflows/ci.yml/badge.svg)](https://github.com/kitsune-research/Kitsune-py/actions)
-[![Python Version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue.svg)](https://www.python.org/)
+[![Kitsune NIDS Core CI](https://github.com/kitsune-research/Kitsune-py/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/kitsune-research/Kitsune-py/actions/workflows/ci.yml)
+[![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/)
 [![NumPy 2.x](https://img.shields.io/badge/NumPy-2.x%20Ready-013243.svg?logo=numpy&logoColor=white)](https://numpy.org/)
 [![Paper: NDSS 2018](https://img.shields.io/badge/Paper-NDSS%202018-red.svg)](https://doi.org/10.14722/ndss.2018.23204)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
