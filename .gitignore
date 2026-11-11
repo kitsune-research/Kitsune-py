@@ -66,3 +66,7 @@ demo_scores.csv
 *.json
 !docs/*.json
 mirai_labels.csv
+
+# Telemetría masiva y artefactos de benchmarking
+dataset/*.tsv
+docs/*.csv
