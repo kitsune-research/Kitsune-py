@@ -28,9 +28,9 @@ This modernized repository addresses structural limitations of the legacy academ
 * **Zero-Friction CLI Suite:** Native subcommands powered by Typer and Rich for continuous streaming execution (`kitsune run`), visual demonstrations (`kitsune demo`), and automated forensic evaluation (`kitsune eval`).
 * **Defensive Numerical Normalization:** Hardened `KitNET/dA.py` against gradient saturation on unobserved packet bursts via bounded clipping (`clip(x, -1.0, 2.0)`), eliminating catastrophic RMSE explosions (reducing peak baseline residue from 681.91 down to 0.9595).
 * **State-Exhaustion DoS Resilience (NDSS Sec. VI):** Amortized `O(1)` pruning within `AfterImage.incStatDB` to purge stale flow states (`w_i < epsilon`), bounding memory footprint under spoofed IP floods.
-* **Analytical Log-Normal Dynamic Thresholding:** Parametric baseline fitting (`tau = exp(mu_log + alpha * sigma_log)`) replacing brittle empirical maximums, neutralizing SGD initial convergence artifacts.
-* **NDSS 2018 Forensic Metrics Engine:** Built-in evaluation module (`metrics.py`) providing ROC AUC, Equal Error Rate (EER), and True Positive Rate (TPR) / False Negative Rate (FNR) constrained at ultra-low False Positive Rates (`FPR <= 0.001`) strictly in execution mode (`--skip-grace`).
-* **Modern Packaging & Ecosystem Readiness:** Fully standard PEP 517/621 packaging (`pyproject.toml`) and cross-platform matrix CI workflow supporting Python 3.9, 3.10, and 3.11 runtimes on Linux and Windows.
+* **Analytical Dynamic Thresholding:** Parametric baseline fitting (`3-sigma` and log-normal `tau = exp(mu_log + alpha * sigma_log)`) replacing brittle empirical maximums, neutralizing SGD initial convergence artifacts.
+* **NDSS 2018 Forensic Metrics Engine:** Built-in evaluation module (`metrics.py` and `scripts/cross_benchmark_eval.py`) providing ROC AUC, Equal Error Rate (EER), and True Positive Rate (TPR) / False Negative Rate (FNR) constrained at ultra-low False Positive Rates (`FPR <= 0.001`) strictly in execution mode (`--skip-grace`).
+* **Modern Packaging & Ecosystem Readiness:** Fully standard PEP 517/621 packaging (`pyproject.toml`) and cross-platform matrix CI workflow supporting Python 3.10, 3.11, and 3.12 runtimes on Ubuntu 24.04 and Windows.
 
 ---
 
@@ -41,7 +41,7 @@ Kitsune processes unlabelled packet streams in constant time and memory `O(1)` t
 1. **Feature Extractor (AfterImage):** 100 continuous 1D/2D statistics across 5 damped windows (`lambda`: 100ms to 1min). Damped decay factor: `d_lambda(t) = 2^(-lambda * dt)`. `O(1)` state-pruning for memory exhaustion defense (NDSS Sec. VI).
 2. **Feature Mapper (corClust):** Incremental correlation distance clustering: `D_ij = 1 - (C_ij / sqrt(c_rs^(i) * c_rs^(j)))`. Dendrogram partitioned to bound sub-autoencoder size to `max_ae` (`m <= 10`).
 3. **Ensemble Layer (KitNET L1):** `k` independent 3-layer autoencoders (compression ratio `beta = 0.75`). 1-pass online SGD training (`max_iter = 1`) over benign traffic. Min-max normalization defensively saturated in `[-1.0, 2.0]`.
-4. **Output Layer (KitNET L2) & Forensic Thresholding:** Single integrator autoencoder scoring non-linear relationships across subspace RMSEs. Analytical dynamic threshold: `tau = exp(mu_log + alpha * sigma_log)`.
+4. **Output Layer (KitNET L2) & Forensic Thresholding:** Single integrator autoencoder scoring non-linear relationships across subspace RMSEs. Analytical dynamic threshold calibration over benign execution floor.
 
 ### Architectural Note: Feature Space Dimensionality (115 vs. 100)
 
@@ -59,9 +59,9 @@ Engineers comparing this implementation against the foundational NDSS 2018 paper
 * [Memorando Técnico: Arquitectura del Motor v0.4.0 (docs/TECH_MEMO_v0.4.0_ARCHITECTURE_ES.md)](docs/TECH_MEMO_v0.4.0_ARCHITECTURE_ES.md): Especificación canónica en español con deducciones matemáticas íntegras y mecanismos de defensa frente a saturación de estado.
 
 ### Core Engineering Specifications (Corpus Técnico GRD / EQF 7)
-* [`PED-01`: Manual Pedagógico Interno y Guía de Taller](docs/DOC-GRD-KITSUNE-PED-01.md): Deconstrucción de física de colas en el Edge, modelos mecánicos de AfterImage (`O(1)`) y KitNET (`O(k^2)`), calibración analítica log-normal y banco de evaluación para Blue Teams y SOC.
+* [`PED-01`: Manual Pedagógico Interno y Guía de Taller](docs/DOC-GRD-KITSUNE-PED-01.md): Deconstrucción de física de colas en el Edge, modelos mecánicos de AfterImage (`O(1)`) y KitNET (`O(k^2)`), calibración analítica y banco de evaluación para Blue Teams y SOC.
 * [`ARCH-02`: Especificación Formal de Arquitectura y Diseño](docs/DOC-GRD-KITSUNE-ARCH-02.md): Formulación matemática de tuplas estadísticas continuas, decaimiento exponencial `d_lambda(t) = 2^(-lambda * dt)`, clustering incremental corClust y reducción cuadrática.
-* [`BENCH-03`: Informe Forense Experimental y Benchmarks](docs/DOC-GRD-KITSUNE-BENCH-03.md): Validación empírica (NDSS 2018 Sec. V): análisis forense de vectores hostiles (Mirai Botnet y escaneo Nmap), comparativa frente a Suricata / Isolation Forest / GMM y latencia determinista.
+* [`BENCH-03`: Evaluación Empírica y Confrontación Arquitectónica (Kitsune vs. Suricata)](docs/DOC-GRD-KITSUNE-BENCH-03.md): Validación empírica sobre las 764.137 tramas de Mirai Botnet en bus virtual L2 frente a Suricata 8.0.8 (53.495 reglas ET Open), matriz de confusión y huella de memoria RSS.
 * [`PROD-04`: Guía de Despliegue en Producción y Gobernanza BCP](docs/DOC-GRD-KITSUNE-PROD-04.md): Patrones de ingesta pasiva fuera de banda (SPAN, TAP físico y VPC Mirroring), integración SIEM en formato CEF/JSON, mitigación de baseline poisoning y plantillas de servicio.
 
 ---
@@ -102,7 +102,7 @@ kitsune --help
 The unified CLI provides dedicated subcommands for production analysis, demos, and benchmark evaluation:
 
 ### 1. Interactive Demonstration (`kitsune demo`)
-Executes an end-to-end unsupervised pipeline over the canonical Mirai botnet evaluation capture, fits the log-normal decision boundary, and renders an anomaly score plot:
+Executes an end-to-end unsupervised pipeline over the canonical Mirai botnet evaluation capture, fits the decision boundary, and renders an anomaly score plot:
 
 ```bash
 kitsune demo --limit 25000 --plot --plot-path docs/demo_plot.png
@@ -141,9 +141,29 @@ kitsune eval -s scores.csv -l labels.csv -g 2000 -j docs/forensic_report_canonic
 
 ---
 
-## Empirical Benchmark: Mirai Botnet Detection (NDSS 2018 Sec. V-C)
+## Empirical Benchmarks: Mirai Botnet Detection (NDSS 2018 Sec. V)
 
-Evaluated against the **Mirai Botnet** IoT evaluation trace (764,137 packets, 118.9 minutes duration) recorded from an operational IP camera surveillance network.
+Evaluated against the canonical **Mirai Botnet** IoT dataset (`764,137` L2–L4 frames, `118.9` minutes duration) captured on a live multi-device IoT surveillance network.
+
+### 1. Full-Trace Head-to-Head Confrontation: Kitsune NIDS vs. Suricata 8.0.8 (`764,137` Frames)
+
+Executed over an isolated Layer-2 virtual bus (`veth-inj` <-> `veth-nids` at `5,000 pps`, hardware offloading disabled) comparing unsupervised online learning (`k = 16` autoencoders, `m <= 10`, `R^100`) against **Suricata 8.0.8** loaded with `53,495` active **Emerging Threats Open** rules (`AF_PACKET`). Full forensic report: [`docs/DOC-GRD-KITSUNE-BENCH-03.md`](docs/DOC-GRD-KITSUNE-BENCH-03.md).
+
+| Engine / Operating Point | Paradigm & Knowledge Base | TPR (Detection) | FPR (False Alarms) | Resident Memory (RSS) |
+| :--- | :--- | :---: | :---: | :---: |
+| **Kitsune NIDS (`tau_0.001 = 0.302031`)** | Unsupervised online (`20k` benign grace, `max_iter=1`) | **88.22%** (`566,520` TP) | **0.10%** (`102` FP) | **~85 MB** |
+| **Kitsune NIDS (`tau_3sigma = 0.114134`)** | Unsupervised online (`3-sigma` statistical cutoff) | **88.45%** (`567,987` TP) | **2.05%** (`2,096` FP) | **~85 MB** |
+| **Suricata 8.0.8 IDS (`AF_PACKET`)** | Signature-based (`53,495` ET Open rules) | **0.00%** (`0` Mirai hits)* | `4,533` decoder alerts | **475.26 MB** (`486,668 KB`) |
+
+*\*Suricata decoded `762,701` / `764,137` frames (`0.19%` kernel drops) and emitted `4,533` generic L2/L4 decoder alerts (`4,380` `Ethertype unknown`, `148` `UDPv4 invalid checksum`, `5` `STREAM 3way handshake`), triggering **zero** Mirai-specific malware or Telnet brute-force signatures.*
+
+Reproduce the cross-engine correlation audit locally:
+
+```bash
+python scripts/cross_benchmark_eval.py
+```
+
+### 2. Isolated Infected-Host Sub-Trace Audit (`exec-mode` Window)
 
 | Benchmark Metric | NDSS 2018 Criterion | Empirical Result |
 | :--- | :--- | :--- |
@@ -172,8 +192,8 @@ pytest tests/ -v --tb=short --cov=KitNET --cov=AfterImage --cov-report=term-miss
 ```
 
 All pull requests and commits to `main` must pass the multi-platform matrix CI workflow (`.github/workflows/ci.yml`):
-* **Operating Systems:** Ubuntu Latest, Windows Latest.
-* **Python Runtimes:** 3.9, 3.10, 3.11.
+* **Operating Systems:** Ubuntu 24.04, Windows Latest.
+* **Python Runtimes:** 3.10, 3.11, 3.12.
 
 ---
 
