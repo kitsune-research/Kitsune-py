@@ -13,7 +13,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from KitNET.KitNET import KitNET
+from kitsune.model.kitnet import KitNET
 
 
 class TestKitNETInvariants:

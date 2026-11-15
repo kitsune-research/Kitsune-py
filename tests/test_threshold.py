@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from threshold import (
+from kitsune.threshold import (
     calculate_lognormal_threshold,
     evaluate_detection_profile,
     fit_lognormal_baseline,

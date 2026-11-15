@@ -71,7 +71,7 @@ notebook_content = {
    "source": [
     "import time\n",
     "import numpy as np\n",
-    "from Kitsune import Kitsune\n",
+    "from kitsune.engine import Kitsune\n",
     "\n",
     "PACKET_LIMIT = 15000\n",
     "MAX_AE = 10\n",

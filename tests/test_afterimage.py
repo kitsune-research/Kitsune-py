@@ -13,7 +13,7 @@ import math
 import numpy as np
 import pytest
 
-import netStat as ns
+import kitsune.features.netstat as ns
 
 
 class TestAfterImageInvariants:

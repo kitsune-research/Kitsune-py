@@ -12,7 +12,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from KitNET.corClust import corClust
+from kitsune.model.corclust import corClust
 
 
 class TestCorClustInvariants:

@@ -35,7 +35,7 @@ from rich.table import Table
 
 # Resilient imports for root-level and packaged execution
 try:
-    from Kitsune import Kitsune
+    from kitsune.engine import Kitsune
 except ImportError:
     try:
         from kitsune.core import Kitsune  # type: ignore
@@ -43,7 +43,7 @@ except ImportError:
         Kitsune = None
 
 try:
-    from metrics import compute_roc_metrics
+    from kitsune.metrics import compute_roc_metrics
 except ImportError:
     compute_roc_metrics = None
 

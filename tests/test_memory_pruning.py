@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from AfterImage import incStatDB
+from kitsune.features.afterimage import incStatDB
 
 
 def test_incstatdb_prune_inactive_retention():

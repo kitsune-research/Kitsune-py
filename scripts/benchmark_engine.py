@@ -6,7 +6,7 @@ import time
 import csv
 import sys
 from pathlib import Path
-from Kitsune import Kitsune
+from kitsune.engine import Kitsune
 
 def run_benchmark(pcap_path: str, max_packets: int = 100000, max_ae_size: int = 10):
     pcap_file = Path(pcap_path)
