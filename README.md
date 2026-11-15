@@ -3,6 +3,7 @@
 
 [![Kitsune NIDS Core CI](https://github.com/kitsune-research/Kitsune-py/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/kitsune-research/Kitsune-py/actions/workflows/ci.yml)
 [![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![NumPy 2.x](https://img.shields.io/badge/NumPy-2.x%20Ready-013243.svg?logo=numpy&logoColor=white)](https://numpy.org/)
 [![Paper: NDSS 2018](https://img.shields.io/badge/Paper-NDSS%202018-red.svg)](https://doi.org/10.14722/ndss.2018.23204)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -25,12 +26,13 @@ Based on the foundational research paper:
 Kitsune is designed for resource-constrained network edge devices (e.g., IoT gateways, industrial SCADA perimeters, embedded routers) requiring real-time, online anomaly detection without external GPU offloading or manual label curation.
 
 This modernized repository addresses structural limitations of the legacy academic release:
+* **Canonical `src-layout` Package Architecture:** Cleanly decoupled modular hierarchy under `src/kitsune/` (`features/`, `model/`, `engine.py`, `metrics.py`, `threshold.py`, `cli.py`), exposing `from kitsune import Kitsune` as an installable core library ready for service wrappers.
+* **Deterministic Dependency Resolution (`uv.lock`):** Reproducible cross-platform dependency graph managed with **Astral `uv`** (PEP 621 / PEP 735) and pinned runtime (`.python-version` on `3.12`), eliminating dependency drift across Linux and Windows.
 * **Zero-Friction CLI Suite:** Native subcommands powered by Typer and Rich for continuous streaming execution (`kitsune run`), visual demonstrations (`kitsune demo`), and automated forensic evaluation (`kitsune eval`).
-* **Defensive Numerical Normalization:** Hardened `KitNET/dA.py` against gradient saturation on unobserved packet bursts via bounded clipping (`clip(x, -1.0, 2.0)`), eliminating catastrophic RMSE explosions (reducing peak baseline residue from 681.91 down to 0.9595).
-* **State-Exhaustion DoS Resilience (NDSS Sec. VI):** Amortized `O(1)` pruning within `AfterImage.incStatDB` to purge stale flow states (`w_i < epsilon`), bounding memory footprint under spoofed IP floods.
-* **Analytical Dynamic Thresholding:** Parametric baseline fitting (`3-sigma` and log-normal `tau = exp(mu_log + alpha * sigma_log)`) replacing brittle empirical maximums, neutralizing SGD initial convergence artifacts.
-* **NDSS 2018 Forensic Metrics Engine:** Built-in evaluation module (`metrics.py` and `scripts/cross_benchmark_eval.py`) providing ROC AUC, Equal Error Rate (EER), and True Positive Rate (TPR) / False Negative Rate (FNR) constrained at ultra-low False Positive Rates (`FPR <= 0.001`) strictly in execution mode (`--skip-grace`).
-* **Modern Packaging & Ecosystem Readiness:** Fully standard PEP 517/621 packaging (`pyproject.toml`) and cross-platform matrix CI workflow supporting Python 3.10, 3.11, and 3.12 runtimes on Ubuntu 24.04 and Windows.
+* **Defensive Numerical Normalization:** Hardened `src/kitsune/model/da.py` against gradient saturation on unobserved packet bursts via bounded clipping (`clip(x, -1.0, 2.0)`), eliminating catastrophic RMSE explosions (reducing peak baseline residue from 681.91 down to 0.9595).
+* **State-Exhaustion DoS Resilience (NDSS Sec. VI):** Amortized `O(1)` pruning within `src/kitsune/features/afterimage.py` (`incStatDB`) to purge stale flow states (`w_i < epsilon`), bounding memory footprint under spoofed IP floods.
+* **Analytical Dynamic Thresholding:** Parametric baseline fitting (`3-sigma` and log-normal `tau = exp(mu_log + alpha * sigma_log)` in `src/kitsune/threshold.py`) replacing brittle empirical maximums, neutralizing SGD initial convergence artifacts.
+* **NDSS 2018 Forensic Metrics Engine:** Built-in evaluation module (`src/kitsune/metrics.py` and `scripts/cross_benchmark_eval.py`) providing ROC AUC, Equal Error Rate (EER), and True Positive Rate (TPR) / False Negative Rate (FNR) constrained at ultra-low False Positive Rates (`FPR <= 0.001`) strictly in execution mode (`--skip-grace`).
 
 ---
 
@@ -38,10 +40,36 @@ This modernized repository addresses structural limitations of the legacy academ
 
 Kitsune processes unlabelled packet streams in constant time and memory `O(1)` through four sequential stages:
 
-1. **Feature Extractor (AfterImage):** 100 continuous 1D/2D statistics across 5 damped windows (`lambda`: 100ms to 1min). Damped decay factor: `d_lambda(t) = 2^(-lambda * dt)`. `O(1)` state-pruning for memory exhaustion defense (NDSS Sec. VI).
-2. **Feature Mapper (corClust):** Incremental correlation distance clustering: `D_ij = 1 - (C_ij / sqrt(c_rs^(i) * c_rs^(j)))`. Dendrogram partitioned to bound sub-autoencoder size to `max_ae` (`m <= 10`).
-3. **Ensemble Layer (KitNET L1):** `k` independent 3-layer autoencoders (compression ratio `beta = 0.75`). 1-pass online SGD training (`max_iter = 1`) over benign traffic. Min-max normalization defensively saturated in `[-1.0, 2.0]`.
-4. **Output Layer (KitNET L2) & Forensic Thresholding:** Single integrator autoencoder scoring non-linear relationships across subspace RMSEs. Analytical dynamic threshold calibration over benign execution floor.
+1. **Feature Extractor (`src/kitsune/features/`):** 100 continuous 1D/2D statistics across 5 damped windows (`lambda`: 100ms to 1min). Damped decay factor: `d_lambda(t) = 2^(-lambda * dt)`. `O(1)` state-pruning for memory exhaustion defense (NDSS Sec. VI).
+2. **Feature Mapper (`src/kitsune/model/corclust.py`):** Incremental correlation distance clustering: `D_ij = 1 - (C_ij / sqrt(c_rs^(i) * c_rs^(j)))`. Dendrogram partitioned to bound sub-autoencoder size to `max_ae` (`m <= 10`).
+3. **Ensemble Layer (`src/kitsune/model/kitnet.py` L1):** `k` independent 3-layer autoencoders (compression ratio `beta = 0.75`). 1-pass online SGD training (`max_iter = 1`) over benign traffic. Min-max normalization defensively saturated in `[-1.0, 2.0]`.
+4. **Output Layer (`KitNET` L2) & Forensic Thresholding:** Single integrator autoencoder scoring non-linear relationships across subspace RMSEs. Analytical dynamic threshold calibration over benign execution floor.
+
+### Repository Layout
+
+```text
+Kitsune-py/
+├── src/kitsune/
+│   ├── __init__.py            # Public package interface (Kitsune, __version__)
+│   ├── cli.py                 # Unified CLI entrypoint (kitsune demo, run, eval)
+│   ├── engine.py              # Core streaming orchestrator
+│   ├── metrics.py             # NDSS 2018 forensic metrics (AUC, EER, TPR@FPR)
+│   ├── threshold.py           # Log-normal & 3-sigma baseline boundary calibration
+│   ├── features/
+│   │   ├── afterimage.py      # Damped incremental statistics & O(1) state pruning
+│   │   ├── extractor.py       # Packet parser & R^100 feature vector builder
+│   │   └── netstat.py         # MAC/IP/Socket channel state tracker
+│   └── model/
+│       ├── corclust.py        # Incremental Pearson correlation clustering (m <= 10)
+│       ├── da.py              # 3-layer denoising autoencoder with bounded clipping
+│       ├── kitnet.py          # Two-layer O(k^2) online autoencoder ensemble
+│       └── utils.py           # Numerical activations & helper routines
+├── tests/                     # Deterministic unit & invariant test suite
+├── scripts/                   # Cross-engine benchmarks & reproducibility harnesses
+├── docs/                      # Canonical architecture memos & GRD/EQF-7 corpus
+├── pyproject.toml             # PEP 621 / PEP 735 build & dependency specification
+└── uv.lock                    # Cross-platform deterministic dependency lockfile
+```
 
 ### Architectural Note: Feature Space Dimensionality (115 vs. 100)
 
@@ -68,13 +96,27 @@ Engineers comparing this implementation against the foundational NDSS 2018 paper
 
 ## Quickstart & Installation
 
-Clone the repository and install in editable mode:
+### Recommended: Deterministic Setup with Astral `uv`
+
+Clone the repository and synchronize the locked environment (`uv.lock`) in seconds:
 
 ```bash
 git clone https://github.com/kitsune-research/Kitsune-py.git
 cd Kitsune-py
 
-# Virtual environment setup
+# Synchronize exact locked dependencies and install kitsune-nids in editable mode
+uv sync --locked
+
+# Verify test suite and unified CLI
+uv run pytest -v tests/
+uv run kitsune --help
+```
+
+### Alternative: Standard `pip` Editable Install
+
+If you prefer managing your own virtual environment manually:
+
+```bash
 python -m venv .venv
 
 # Windows (PowerShell)
@@ -83,36 +125,28 @@ python -m venv .venv
 # Linux / macOS
 source .venv/bin/activate
 
-# Editable installation
 pip install --upgrade pip
 pip install -e .
-```
-
-Verify environmental and CLI integrity:
-
-```bash
-pytest -v tests/
-kitsune --help
 ```
 
 ---
 
 ## Command Line Interface (CLI)
 
-The unified CLI provides dedicated subcommands for production analysis, demos, and benchmark evaluation:
+The unified CLI (`kitsune.cli:main`) provides dedicated subcommands for production analysis, demos, and benchmark evaluation:
 
 ### 1. Interactive Demonstration (`kitsune demo`)
 Executes an end-to-end unsupervised pipeline over the canonical Mirai botnet evaluation capture, fits the decision boundary, and renders an anomaly score plot:
 
 ```bash
-kitsune demo --limit 25000 --plot --plot-path docs/demo_plot.png
+uv run kitsune demo --limit 25000 --plot --plot-path docs/demo_plot.png
 ```
 
 ### 2. High-Throughput Stream Processing (`kitsune run`)
 Ingests arbitrary network traces (PCAP, PCAPNG, or TSV) in continuous streaming mode with bounded `O(1)` memory:
 
 ```bash
-kitsune run -i traffic.pcap -o scores.csv -f csv --fm-grace 2000 --ad-grace 5000 -m 10
+uv run kitsune run -i traffic.pcap -o scores.csv -f csv --fm-grace 2000 --ad-grace 5000 -m 10
 ```
 
 | Parameter | Type | Default | Description |
@@ -129,7 +163,7 @@ kitsune run -i traffic.pcap -o scores.csv -f csv --fm-grace 2000 --ad-grace 5000
 Audits raw anomaly scores against ground truth labels following the experimental design of NDSS 2018 (Section V-C & Figure 9). The `--skip-grace` flag ensures that metrics reflect purely the steady-state execution mode (`exec-mode`), excluding the initial training transient:
 
 ```bash
-kitsune eval -s scores.csv -l labels.csv -g 2000 -j docs/forensic_report_canonical.json
+uv run kitsune eval -s scores.csv -l labels.csv -g 2000 -j docs/forensic_report_canonical.json
 ```
 
 | Parameter | Type | Default | Description |
@@ -160,7 +194,7 @@ Executed over an isolated Layer-2 virtual bus (`veth-inj` <-> `veth-nids` at `5,
 Reproduce the cross-engine correlation audit locally:
 
 ```bash
-python scripts/cross_benchmark_eval.py
+uv run python scripts/cross_benchmark_eval.py
 ```
 
 ### 2. Isolated Infected-Host Sub-Trace Audit (`exec-mode` Window)
@@ -188,10 +222,10 @@ python scripts/cross_benchmark_eval.py
 The automated test suite covers incremental statistics, correlation clustering, stochastic autoencoder training, log-normal calibration, memory pruning, and forensic metrics:
 
 ```bash
-pytest tests/ -v --tb=short --cov=kitsune --cov-report=term-missing
+uv run pytest tests/ -v --tb=short --cov=kitsune --cov-report=term-missing
 ```
 
-All pull requests and commits to `main` must pass the multi-platform matrix CI workflow (`.github/workflows/ci.yml`):
+All pull requests and commits to `main` must pass the multi-platform matrix CI workflow (`.github/workflows/ci.yml`), powered by `astral-sh/setup-uv@v5` and `uv sync --locked`:
 * **Operating Systems:** Ubuntu 24.04, Windows Latest.
 * **Python Runtimes:** 3.10, 3.11, 3.12.
 
