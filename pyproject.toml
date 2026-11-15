@@ -28,11 +28,10 @@ dependencies = [
 ]
 
 [project.scripts]
-kitsune = "cli:main"
+kitsune = "kitsune.cli:main"
 
-[tool.setuptools]
-py-modules = ["cli", "Kitsune", "AfterImage", "FeatureExtractor", "netStat", "metrics"]
-packages = ["KitNET"]
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

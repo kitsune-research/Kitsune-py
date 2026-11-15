@@ -188,7 +188,7 @@ python scripts/cross_benchmark_eval.py
 The automated test suite covers incremental statistics, correlation clustering, stochastic autoencoder training, log-normal calibration, memory pruning, and forensic metrics:
 
 ```bash
-pytest tests/ -v --tb=short --cov=KitNET --cov=AfterImage --cov-report=term-missing
+pytest tests/ -v --tb=short --cov=kitsune --cov-report=term-missing
 ```
 
 All pull requests and commits to `main` must pass the multi-platform matrix CI workflow (`.github/workflows/ci.yml`):

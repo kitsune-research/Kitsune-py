@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from metrics import compute_roc_metrics
+from kitsune.metrics import compute_roc_metrics
 
 
 def test_compute_roc_metrics_perfect_separation():
